@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario Envases - Cafetería JAVA</title>
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/inventario.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> Cafetería JAVA</h1>
+    <nav>
+      <a href="../inicio/Inicio.html">Inicio</a>
+      <a href="../pedidos/GestionPedidos.html">Pedidos</a>
+      <a href="#" class="activo">Inventario</a>
+      <a href="../pedidos/Panel.html">Panel</a>
+      <a href="../usuarios/Usuarios.html" id="linkUsuarios" style="display:none;">Usuarios</a>
+      <a href="../../InicioDeSesion.html" id="btnCerrarSesion">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2><a href="inventario_menu.html">Inventario</a> / Envases</h2>
+
+    <section class="inventario">
+
+      <div class="producto">
+        <h3 class="nombre_del_producto">Bebida caliente</h3>
+        <img src="imagenes/vaso_caliente.jpg" alt="Bebida caliente">
+        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
+        <div class="botones">
+          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+      <div class="producto">
+        <h3 class="nombre_del_producto">Bebida fría</h3>
+        <img src="imagenes/vaso_frio.jpg" alt="Bebida fría">
+        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
+        <div class="botones">
+          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+      <div class="producto">
+        <h3 class="nombre_del_producto">Servilletas</h3>
+        <img src="imagenes/servilletas.jpg" alt="Servilletas">
+        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
+        <div class="botones">
+          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+      <div class="producto">
+        <h3 class="nombre_del_producto">Manga aislante</h3>
+        <img src="imagenes/manga_aislante.jpg" alt="Manga aislante">
+        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
+        <div class="botones">
+          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+      <div class="producto">
+        <h3 class="nombre_del_producto">Popotes</h3>
+        <img src="imagenes/popotes.jpg" alt="Popotes">
+        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
+        <div class="botones">
+          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Modal Editar -->
+  <div id="modal_editar" class="modal" style="display:none;">
+    <div class="modal_contenido">
+      <span class="cerrar">&times;</span>
+      <h4>Actualizar Inventario</h4>
+      <form id="form_modal">
+        <div class="form_grupo">
+          <label>Producto:</label>
+          <input type="text" id="nombre_producto" readonly>
+        </div>
+        <div class="form_grupo">
+          <label for="cantidad_total">Cantidad disponible:</label>
+          <input type="number" id="cantidad_total" min="0" step="0.001" placeholder="Ingrese la cantidad">
+        </div>
+        <div class="botones_modal">
+          <button type="button" class="btn_cancelar">Cancelar</button>
+          <button type="submit" class="btn_guardar">Actualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Ordenar -->
+  <div id="ordenModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:400px;">
+      <span class="close-button">&times;</span>
+      <h3>Ordenar <span id="productoTitulo"></span></h3>
+      <form id="ordenForm">
+        <input type="hidden" id="ordenProductoNombre">
+        <label for="ordenDestino">Correo del Proveedor:</label>
+        <input type="email" id="ordenDestino" placeholder="ejemplo@proveedor.com" required>
+        <label for="ordenCantidad">Cantidad a Ordenar:</label>
+        <input type="number" id="ordenCantidad" min="1" required>
+        <label for="ordenMotivo">Motivo/Urgencia (Opcional):</label>
+        <textarea id="ordenMotivo" rows="3"></textarea>
+        <button type="submit"
+          style="background-color:#5d4037; color:white; padding:10px 15px; border:none; border-radius:4px; cursor:pointer; width:100%; margin-top:10px;">
+          Enviar Orden por Correo
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Cafetería JAVA. Todos los derechos reservados.</p>
+    <nav>
+      <a href="../legal/politica_privacidad.html">Política de privacidad</a> |
+      <a href="../legal/condiciones_servicio.html">Condiciones de servicio</a> |
+      <a href="../legal/preguntas_frecuentes.html">Preguntas frecuentes</a>
+    </nav>
+  </footer>
+
+  <script src="../../assets/js/inventario.js"></script>
+
+</body>
+</html>

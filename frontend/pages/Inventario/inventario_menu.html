@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario - Cafetería JAVA</title>
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/inventario.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> Cafetería JAVA</h1>
+    <nav>
+      <a href="../inicio/Inicio.html">Inicio</a>
+      <a href="../pedidos/GestionPedidos.html">Pedidos</a>
+      <a href="#" class="activo">Inventario</a>
+      <a href="../pedidos/Panel.html">Panel</a>
+      <a href="../usuarios/Usuarios.html" id="linkUsuarios" style="display:none;">Usuarios</a>
+      <a href="../../InicioDeSesion.html" id="btnCerrarSesion">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Inventario</h2>
+
+    <section class="menu_inventario">
+      <a href="inventario_bebidas.html"><button>Bebidas</button></a>
+      <a href="inventario_comidas.html"><button>Comida</button></a>
+      <a href="inventario_envases.html"><button>Envases</button></a>
+      <a href="inventario_limpieza.html"><button>Limpieza</button></a>
+
+      <div class="reportes-container">
+        <button id="btnReporteInventario" class="btn-reportes">
+          <i class="fas fa-boxes"></i> Generar reporte de inventario
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Reporte Inventario -->
+  <div id="modalReporteInventario" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span id="closeReporteInventario" class="close-btn">&times;</span>
+      <h2><i class="fas fa-boxes"></i> Reporte de Inventario</h2>
+      <div id="tablaReporteInventario">
+        <p>Cargando reporte de inventario...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Cafetería JAVA. Todos los derechos reservados.</p>
+    <nav>
+      <a href="../legal/politica_privacidad.html">Política de privacidad</a> |
+      <a href="../legal/condiciones_servicio.html">Condiciones de servicio</a> |
+      <a href="../legal/preguntas_frecuentes.html">Preguntas frecuentes</a>
+    </nav>
+  </footer>
+
+  <script src="../../assets/js/inventario.js"></script>
+
+</body>
+</html>

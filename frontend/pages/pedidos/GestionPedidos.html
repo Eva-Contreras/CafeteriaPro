@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cafetería JAVA - Pedidos</title>
+  <link rel="stylesheet" href="../../assets/css/base.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/pedidos.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> Cafetería JAVA</h1>
+    <nav>
+      <a href="../inicio/Inicio.html">Inicio</a>
+      <a href="#" class="activo">Pedidos</a>
+      <a href="../Inventario/inventario_menu.html">Inventario</a>
+      <a href="Panel.html">Panel</a>
+      <a href="../usuarios/Usuarios.html" id="linkUsuarios" style="display:none;">Usuarios</a>
+      <a href="../../InicioDeSesion.html" id="btnCerrarSesion">Cerrar sesión</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h2 style="margin-bottom:0;">Pedidos</h2>
+      <button id="btnAddProduct" class="add" style="display:none; width:auto; padding:10px 20px;">
+        <i class="fa-solid fa-plus"></i> Agregar Producto
+      </button>
+    </div>
+
+    <div id="productsContainer" class="cards"></div>
+    <div class="actions"></div>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <p>© 2025 Cafetería JAVA. Todos los derechos reservados.</p>
+      <nav class="footer-links">
+        <a href="../legal/politica_privacidad.html">Política de privacidad</a> |
+        <a href="../legal/condiciones_servicio.html">Condiciones de servicio</a> |
+        <a href="../legal/preguntas_frecuentes.html">Preguntas frecuentes</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Modal Resumen Pedido -->
+  <div id="resumenModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h3>Resumen de Pedido</h3>
+      <ul id="listaPedidoModal"></ul>
+      <div class="modal-footer">
+        <p><strong>Total:</strong> <span id="totalModal"></span></p>
+      </div>
+      <button id="seguirAgregando" class="add">Añadir o Actualizar Productos</button>
+      <button id="cerrarYConfirmar" class="report">Cerrar y Confirmar</button>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Producto (Admin) -->
+  <div id="addProductModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <span class="close-add-product" style="float:right; font-size:28px; cursor:pointer;">&times;</span>
+      <h3 style="color:#5a3d31; border-bottom:2px solid #5a3d31; padding-bottom:10px;">Agregar Nuevo Producto</h3>
+
+      <form id="addProductForm" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-weight:bold;">Nombre:</label>
+            <input type="text" id="newProdName" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          </div>
+          <div>
+            <label style="font-weight:bold;">Precio ($):</label>
+            <input type="number" id="newProdPrice" step="0.50" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          </div>
+          <div>
+            <label style="font-weight:bold;">Categoría:</label>
+            <select id="newProdCategory" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:bold;">Stock Inicial:</label>
+            <input type="number" id="newProdStock" value="0" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-weight:bold;">Descripción:</label>
+          <textarea id="newProdDesc" rows="2" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
+        </div>
+
+        <div>
+          <label style="font-weight:bold;">URL Imagen:</label>
+          <input type="url" id="newProdImage" placeholder="https://..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+
+        <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
+        <h4 style="margin:0; color:#6d4c41;">Receta (Ingredientes)</h4>
+        <p style="font-size:0.8em; color:#666; margin-bottom:5px;">Define qué se descuenta del inventario al vender esto.</p>
+
+        <div id="listaIngredientesContainer" style="max-height:150px; overflow-y:auto; border:1px solid #eee; padding:5px;"></div>
+
+        <button type="button" id="btnAgregarIngrediente"
+          style="background-color:#6c757d; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer; margin-top:5px;">
+          + Agregar Ingrediente
+        </button>
+
+        <button type="submit" class="add" style="margin-top:15px; width:100%;">Guardar Producto</button>
+
+        <a href="#" id="btnAbrirCrearInsumo" style="font-size:0.9em; color:#28a745; text-decoration:underline;">
+          ¿No encuentras el ingrediente? Créalo aquí
+        </a>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Seleccionar Cliente -->
+  <div id="clienteInitModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <h2 style="color:#6d4c41;">Seleccionar Cliente</h2>
+      <p>Identifica la orden antes de comenzar.</p>
+
+      <div id="estadoSeleccionado" style="display:none; background-color:#e8f5e9; padding:15px; border-radius:8px; border:1px solid #a5d6a7; margin-bottom:20px; text-align:center;">
+        <p style="margin:0; font-size:1.1em; color:#2e7d32;">
+          Cliente: <strong><span id="lblClienteSeleccionado"></span></strong>
+        </p>
+        <button id="btnCancelarSeleccion" style="margin-top:10px; background:none; border:none; color:#c62828; text-decoration:underline; cursor:pointer;">
+          Cambiar Cliente
+        </button>
+      </div>
+
+      <div id="contenedorBusqueda">
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <input type="text" id="busquedaCliente" placeholder="Buscar cliente por nombre..."
+            style="flex:1; padding:10px; border:1px solid #ccc; border-radius:4px;">
+          <button id="btnBuscarCliente" class="add" style="padding:10px 15px;">🔍 Buscar</button>
+        </div>
+
+        <div id="listaResultados" style="border:1px solid #ddd; max-height:120px; overflow-y:auto; display:none; margin-bottom:15px; border-radius:4px;"></div>
+
+        <div class="form-group" style="border-top:1px solid #eee; padding-top:15px; margin-bottom:15px;">
+          <label for="selectMesaRapida" style="font-weight:bold;">O seleccionar Mesa Rápida:</label>
+          <select id="selectMesaRapida" style="width:100%; padding:10px; margin-top:5px;">
+            <option value="">-- Seleccionar Mesa --</option>
+            <option value="1">Mesa 1</option>
+            <option value="2">Mesa 2</option>
+            <option value="3">Mesa 3</option>
+            <option value="4">Mesa 4</option>
+            <option value="5">Mesa 5</option>
+            <option value="6">Para Llevar/Barra</option>
+          </select>
+        </div>
+
+        <div id="formNuevoCliente" style="display:none; background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
+          <h4 style="margin-top:0; color:#d35400;">Registrar Nuevo Cliente</h4>
+          <input type="text" id="nuevoNombreCliente" placeholder="Nombre completo"
+            style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+          <input type="email" id="nuevoEmailCliente" placeholder="Correo"
+            style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+          <button id="btnRegistrarCliente" class="ok" style="width:100%;">Registrar y Seleccionar</button>
+          <button id="btnCancelarRegistro" style="width:100%; margin-top:5px; background:none; border:none; color:#666; cursor:pointer;">Cancelar registro</button>
+        </div>
+      </div>
+
+      <hr>
+
+      <div style="margin-top:20px; display:flex; justify-content:space-between; gap:10px;">
+        <button id="btnSalirPedidos" class="delete" style="background-color:#7f8c8d;">Salir al Inicio</button>
+        <button id="btnConfirmarMesa" class="ok" disabled style="opacity:0.5; cursor:not-allowed;">
+          Confirmar y Continuar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Insumo -->
+  <div id="modalQuickInsumo" class="modal" style="display:none; z-index:2000;">
+    <div class="modal-content" style="max-width:450px; border:2px solid #28a745;">
+      <span class="close-btn" onclick="document.getElementById('modalQuickInsumo').style.display='none'">&times;</span>
+      <h3 style="color:#28a745; margin-top:0;">Nuevo Ingrediente</h3>
+
+      <form id="formQuickInsumo">
+        <div style="margin-bottom:10px;">
+          <label>Nombre:</label>
+          <input type="text" id="qi_nombre" required style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Categoría:</label>
+          <select id="qi_categoria" style="width:100%; padding:8px;">
+            <option value="1">Bebidas (Ingrediente)</option>
+            <option value="2">Comidas (Ingrediente)</option>
+            <option value="3">Envases</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Stock Inicial:</label>
+          <input type="number" id="qi_cantidad" value="0" required style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>URL Imagen (Opcional):</label>
+          <input type="text" id="qi_imagen" placeholder="https://..." style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <button type="submit" class="add" style="width:100%; background-color:#28a745;">Guardar Ingrediente</button>
+      </form>
+    </div>
+  </div>
+
+  <input type="hidden" id="idClienteFinal">
+
+  <script src="../../assets/js/gestionPedidos.js"></script>
+</body>
+</html>
