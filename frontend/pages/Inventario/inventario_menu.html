@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventario - Cafetería JAVA</title>
+  <title>Inventario - CoffeeTrack</title>
   <link rel="stylesheet" href="../../assets/css/base.css">
   <link rel="stylesheet" href="../../assets/css/components.css">
   <link rel="stylesheet" href="../../assets/css/inventario.css">
@@ -13,7 +13,7 @@
 <body>
 
   <header>
-    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> Cafetería JAVA</h1>
+    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> CoffeeTrack</h1>
     <nav>
       <a href="../inicio/Inicio.html">Inicio</a>
       <a href="../pedidos/GestionPedidos.html">Pedidos</a>
@@ -25,20 +25,73 @@
   </header>
 
   <main>
-    <h2>Inventario</h2>
-
-    <section class="menu_inventario">
-      <a href="inventario_bebidas.html"><button>Bebidas</button></a>
-      <a href="inventario_comidas.html"><button>Comida</button></a>
-      <a href="inventario_envases.html"><button>Envases</button></a>
-      <a href="inventario_limpieza.html"><button>Limpieza</button></a>
-
-      <div class="reportes-container">
-        <button id="btnReporteInventario" class="btn-reportes">
-          <i class="fas fa-boxes"></i> Generar reporte de inventario
-        </button>
+    <div class="inventory-header">
+      <div class="header-title-row">
+        <h2 class="inventory-main-title"><i class="fa-solid fa-boxes-packing"></i> Inventario</h2>
+        <span class="header-badge">Control de Stock</span>
       </div>
+      <p class="inventory-subtitle">Administración y auditoría de insumos operativos.</p>
+    </div>
+
+    <!-- Menú Principal de Inventario como Tarjetas Visuales -->
+    <section class="menu_inventario_cards">
+      
+      <a href="inventario_bebidas.html" class="inventory-card">
+        <div class="card-icon-wrapper">
+          <i class="fa-solid fa-mug-hot"></i>
+        </div>
+        <div class="card-content">
+          <h3>Bebidas</h3>
+          <p>Café, tés, jarabes, leches y polvos.</p>
+        </div>
+        <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </a>
+
+      <a href="inventario_comidas.html" class="inventory-card">
+        <div class="card-icon-wrapper">
+          <i class="fa-solid fa-cookie-bite"></i>
+        </div>
+        <div class="card-content">
+          <h3>Comidas</h3>
+          <p>Panadería, postres, snacks e ingredientes.</p>
+        </div>
+        <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </a>
+
+      <a href="inventario_envases.html" class="inventory-card">
+        <div class="card-icon-wrapper">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <div class="card-content">
+          <h3>Envases y Empaques</h3>
+          <p>Vasos, tapas, servilletas y bolsas.</p>
+        </div>
+        <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </a>
+
+      <a href="inventario_limpieza.html" class="inventory-card">
+        <div class="card-icon-wrapper">
+          <i class="fa-solid fa-pump-soap"></i>
+        </div>
+        <div class="card-content">
+          <h3>Limpieza</h3>
+          <p>Detergentes, desinfectantes y utensilios.</p>
+        </div>
+        <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+      </a>
+
     </section>
+
+    <!-- Botón Reportes en una barra de acción ultra limpia y premium -->
+    <div class="report-action-bar">
+      <div class="action-text">
+        <h3>Auditoría de Insumos</h3>
+        <p>Genera un reporte del nivel de stock actual de todos los artículos.</p>
+      </div>
+      <button id="btnReporteInventario" class="btn-report-premium">
+        <i class="fa-solid fa-file-invoice"></i> Generar Reporte de Inventario
+      </button>
+    </div>
   </main>
 
   <!-- Modal Reporte Inventario -->
@@ -53,7 +106,7 @@
   </div>
 
   <footer>
-    <p>© 2025 Cafetería JAVA. Todos los derechos reservados.</p>
+    <p>© 2025 CoffeeTrack. Todos los derechos reservados.</p>
     <nav>
       <a href="../legal/politica_privacidad.html">Política de privacidad</a> |
       <a href="../legal/condiciones_servicio.html">Condiciones de servicio</a> |

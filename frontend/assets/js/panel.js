@@ -59,8 +59,8 @@ async function loadOrderList() {
         <div>#${order.IdPedido}</div>
         <div>${order.NombreCliente}</div>
         <div>${formatDate(order.Fecha)}</div>
-        <div>$${parseFloat(order.Total).toFixed(2)}</div>
-        <div>${order.Estado}</div>
+        <div style="font-weight: 600; color: #5d4037;">$${parseFloat(order.Total).toFixed(2)}</div>
+        <div><span class="status-badge ${order.Estado.toLowerCase()}">${order.Estado}</span></div>
       `;
 
       row.addEventListener('click', () => {

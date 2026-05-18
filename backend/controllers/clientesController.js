@@ -42,7 +42,10 @@ const crearCliente = async (req, res) => {
 
   } catch (error) {
     console.error('Error al registrar cliente:', error);
-    res.status(500).json({ success: false, message: 'Error al registrar cliente' });
+    if (error.message && error.message.includes('UNIQUE KEY constraint')) {
+      return res.status(400).json({ success: false, message: 'El correo electrónico ya está registrado. Usa otro o busca el cliente.' });
+    }
+    res.status(500).json({ success: false, message: 'Error interno al registrar cliente' });
   }
 };
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Usuarios - Cafetería JAVA</title>
+  <title>Gestión de Usuarios - CoffeeTrack</title>
   <link rel="stylesheet" href="../../assets/css/base.css">
   <link rel="stylesheet" href="../../assets/css/components.css">
   <link rel="stylesheet" href="../../assets/css/usuarios.css">
@@ -13,7 +13,7 @@
 <body>
 
   <header>
-    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> Cafetería JAVA</h1>
+    <h1><i class="fa-solid fa-mug-saucer" style="color: #ffffff;"></i> CoffeeTrack</h1>
     <nav>
       <a href="../inicio/Inicio.html">Inicio</a>
       <a href="../pedidos/GestionPedidos.html">Pedidos</a>
@@ -54,47 +54,54 @@
 
   <!-- Modal Agregar/Editar Usuario -->
   <div id="userModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeModal()">&times;</span>
-      <h2 id="modalTitle">Nuevo Usuario</h2>
-      <form id="userForm">
-        <input type="hidden" id="userId">
+    <div class="modal-content user-modal-width">
+      <div class="modal-header-band">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-user-plus" id="modalTitleIcon"></i> 
+          <span id="modalTitle">Nuevo Usuario</span>
+        </h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body-pad">
+        <form id="userForm">
+          <input type="hidden" id="userId">
 
-        <div class="form-group">
-          <label for="nombre">Nombre:</label>
-          <input type="text" id="nombre" required>
-        </div>
+          <div class="form-group">
+            <label for="nombre">Nombre Completo:</label>
+            <input type="text" id="nombre" placeholder="Ej. Juan Pérez" required>
+          </div>
 
-        <div class="form-group">
-          <label for="correo">Correo Electrónico:</label>
-          <input type="email" id="correo" required>
-        </div>
+          <div class="form-group">
+            <label for="correo">Correo Electrónico:</label>
+            <input type="email" id="correo" placeholder="ejemplo@correo.com" required>
+          </div>
 
-        <div class="form-group">
-          <label for="contrasena">Contraseña:</label>
-          <input type="password" id="contrasena" placeholder="Dejar en blanco si no cambia">
-        </div>
+          <div class="form-group">
+            <label for="contrasena">Contraseña:</label>
+            <input type="password" id="contrasena" placeholder="Dejar en blanco si no cambia">
+          </div>
 
-        <div class="form-group">
-          <label for="rol">Rol:</label>
-          <select id="rol" required>
-            <option value="Administrador">Administrador</option>
-            <option value="Cajero/Mesero">Cajero/Mesero</option>
-            <option value="Encargado de inventario">Encargado de inventario</option>
-          </select>
-        </div>
+          <div class="form-group">
+            <label for="rol">Rol de Acceso:</label>
+            <select id="rol" required>
+              <option value="Administrador">Administrador</option>
+              <option value="Cajero/Mesero">Cajero/Mesero</option>
+              <option value="Encargado de inventario">Encargado de inventario</option>
+            </select>
+          </div>
 
-        <div class="form-actions">
-          <button type="button" onclick="closeModal()" class="btn-cancelar">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar</button>
-        </div>
-      </form>
+          <div class="form-actions">
+            <button type="button" onclick="closeModal()" class="btn-cancelar">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
   <footer>
     <div class="footer-content">
-      <p>© 2024 Cafetería JAVA. Todos los derechos reservados.</p>
+      <p>© 2024 CoffeeTrack. Todos los derechos reservados.</p>
       <nav class="footer-links">
         <a href="../legal/condiciones_servicio.html">Condiciones de servicio</a> |
         <a href="../legal/politica_privacidad.html">Política de privacidad</a> |
@@ -161,9 +168,11 @@
     // ==================== MODAL ====================
     function openModal(user = null) {
       modal.style.display = 'flex';
+      const icon = document.getElementById('modalTitleIcon');
 
       if (user) {
         document.getElementById('modalTitle').textContent = 'Editar Usuario';
+        if (icon) icon.className = 'fa-solid fa-user-pen';
         document.getElementById('userId').value          = user.IdUsuario;
         document.getElementById('nombre').value          = user.Nombre;
         document.getElementById('correo').value          = user.Correo;
@@ -172,6 +181,7 @@
         document.getElementById('contrasena').placeholder = 'Dejar en blanco para mantener actual';
       } else {
         document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
+        if (icon) icon.className = 'fa-solid fa-user-plus';
         form.reset();
         document.getElementById('userId').value = '';
         document.getElementById('contrasena').setAttribute('required', 'true');

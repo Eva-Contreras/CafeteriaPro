@@ -222,7 +222,7 @@ const enviarTicket = async (req, res) => {
       <body>
         <div class="ticket">
           <div class="header">
-            <h1>Cafetería JAVA</h1>
+            <h1>CoffeeTrack</h1>
             <h2>Ticket de Compra #${orderId}</h2>
           </div>
           <div class="details">
@@ -258,7 +258,7 @@ const enviarTicket = async (req, res) => {
           </div>
           <div class="footer">
             <p>¡Gracias por su preferencia!</p>
-            <p>Visítanos nuevamente en Cafetería JAVA</p>
+            <p>Visítanos nuevamente en CoffeeTrack</p>
           </div>
         </div>
       </body>
@@ -268,7 +268,7 @@ const enviarTicket = async (req, res) => {
     const info = await transporter.sendMail({
       from:    process.env.EMAIL_USER,
       to:      email,
-      subject: `Ticket de Compra - Cafetería JAVA #${orderId}`,
+      subject: `Ticket de Compra - CoffeeTrack #${orderId}`,
       html:    ticketHTML
     });
 
