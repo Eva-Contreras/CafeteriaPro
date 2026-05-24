@@ -122,12 +122,17 @@ const getCategorias = async (req, res) => {
 const crearProducto = async (req, res) => {
   const { IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl } = req.body;
 
+  const stock = parseFloat(Cantidad);
+  if (isNaN(stock) || stock <= 0) {
+    return res.status(400).json({ success: false, message: 'La cantidad inicial de stock debe ser mayor a 0' });
+  }
+
   try {
     const pool = await getPool();
     const result = await pool.request()
       .input('IdCategoriaInventario', sql.Int, IdCategoriaInventario)
       .input('NombreProducto', sql.NVarChar, NombreProducto)
-      .input('Cantidad', sql.Decimal(10, 3), Cantidad || 0)
+      .input('Cantidad', sql.Decimal(10, 3), stock)
       .input('ImagenUrl', sql.NVarChar, ImagenUrl || null)
       .query(`
         INSERT INTO cafeteriadb.inventario (IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl)

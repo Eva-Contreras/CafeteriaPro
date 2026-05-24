@@ -802,6 +802,10 @@ document.getElementById('formAgregarProducto')?.addEventListener('submit', async
     alert('Por favor ingresa el nombre del producto');
     return;
   }
+  if (cantidad <= 0) {
+    alert('No se puede agregar un producto con stock menor o igual a 0');
+    return;
+  }
   const btnSubmit = this.querySelector('button[type="submit"]');
   if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
   await crearNuevoProducto(nombre, cantidad, imagenUrl);
