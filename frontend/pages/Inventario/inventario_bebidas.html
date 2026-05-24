@@ -25,7 +25,12 @@
   </header>
 
   <main>
-    <h2><a href="inventario_menu.html">Inventario</a> / Bebidas</h2>
+    <div class="inv-page-header">
+      <h2><a href="inventario_menu.html">Inventario</a> / Bebidas</h2>
+      <button id="btnAgregarProducto" class="btn-agregar-producto">
+        <i class="fa-solid fa-circle-plus"></i> Agregar Producto
+      </button>
+    </div>
 
     <section class="inventario">
 
@@ -34,8 +39,9 @@
         <img src="imagenes/cafe_molido.jpeg" alt="Café molido">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -44,8 +50,9 @@
         <img src="imagenes/leche_entera.jpg" alt="Leche entera">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -54,8 +61,9 @@
         <img src="imagenes/leche_deslactosada.jpg" alt="Leche deslactosada">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -64,8 +72,9 @@
         <img src="imagenes/leche_almendra.jpg" alt="Leche de almendras">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -74,8 +83,9 @@
         <img src="imagenes/azucar_estandar.jpg" alt="Azúcar estándar">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -84,8 +94,9 @@
         <img src="imagenes/stevia.jpeg" alt="Stevia">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -94,8 +105,9 @@
         <img src="imagenes/jarabe_vainilla.jpg" alt="Jarabe de vainilla">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -104,8 +116,9 @@
         <img src="imagenes/jarabe_chocolate.jpg" alt="Jarabe de chocolate">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -114,8 +127,9 @@
         <img src="imagenes/te_negro.jpg" alt="Té negro">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -124,8 +138,9 @@
         <img src="imagenes/agua.jpg" alt="Agua">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -134,8 +149,9 @@
         <img src="imagenes/crema_para_batir.jpg" alt="Crema para batir">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -144,8 +160,9 @@
         <img src="imagenes/canela_molida.jpg" alt="Canela molida">
         <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
         <div class="botones">
-          <button class="btn_editar"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
 
@@ -192,6 +209,62 @@
           Enviar Orden por Correo
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Producto -->
+  <div id="modalAgregarProducto" class="modal" style="display:none;">
+    <div class="modal-agregar-contenido">
+      <div class="modal-agregar-header">
+        <div class="modal-agregar-icon"><i class="fa-solid fa-box-open"></i></div>
+        <h3>Agregar Producto</h3>
+        <p class="modal-agregar-sub">Se guardará en la categoría actual</p>
+      </div>
+      <form id="formAgregarProducto">
+        <div class="form_grupo">
+          <label for="nuevoNombreProducto"><i class="fa-solid fa-tag"></i> Nombre</label>
+          <input type="text" id="nuevoNombreProducto" placeholder="Ej: Jugo de naranja" required autocomplete="off">
+        </div>
+        <div class="form_grupo">
+          <label for="nuevaCantidadProducto"><i class="fa-solid fa-cubes"></i> Cantidad inicial</label>
+          <input type="number" id="nuevaCantidadProducto" min="0" step="0.001" value="0">
+        </div>
+        <div class="form_grupo">
+          <label for="nuevaImagenUrl"><i class="fa-solid fa-image"></i> URL de imagen <span style="font-weight:400;color:#a1887f">(opcional)</span></label>
+          <input type="url" id="nuevaImagenUrl" placeholder="https://..." autocomplete="off">
+          <div id="previewWrap" style="display:none; margin-top:8px; text-align:center;">
+            <img id="previewImagen" src="" alt="Previsualización"
+              style="max-width:100%; max-height:120px; border-radius:8px; object-fit:contain; border:1.5px solid #e3d8d0;">
+          </div>
+        </div>
+        <div class="botones-agregar-modal">
+          <button type="button" class="btn-agregar-cancelar" onclick="cerrarModalAgregar()">
+            <i class="fa-solid fa-xmark"></i> Cancelar
+          </button>
+          <button type="submit" class="btn-agregar-guardar">
+            <i class="fa-solid fa-circle-plus"></i> Agregar Producto
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Eliminar -->
+  <div id="modalEliminarProducto" class="modal" style="display:none;">
+    <div class="modal-eliminar-contenido">
+      <div class="modal-eliminar-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3>¿Eliminar Producto?</h3>
+      <p>Estás a punto de eliminar permanentemente:</p>
+      <p class="nombre-eliminar" id="nombreProductoEliminar"></p>
+      <p class="advertencia-eliminar">Esta acción no se puede deshacer.</p>
+      <div class="botones-eliminar-modal">
+        <button type="button" class="btn-eliminar-cancelar" onclick="cerrarModalEliminar()">
+          <i class="fa-solid fa-xmark"></i> Cancelar
+        </button>
+        <button type="button" class="btn-eliminar-confirmar" id="btnConfirmarEliminar">
+          <i class="fa-solid fa-trash"></i> Sí, eliminar
+        </button>
+      </div>
     </div>
   </div>
 

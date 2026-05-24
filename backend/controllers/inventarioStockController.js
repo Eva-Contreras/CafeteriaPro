@@ -120,7 +120,7 @@ const getCategorias = async (req, res) => {
 };
 
 const crearProducto = async (req, res) => {
-  const { IdCategoriaInventario, NombreProducto, Cantidad } = req.body;
+  const { IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl } = req.body;
 
   try {
     const pool   = await getPool();
@@ -128,10 +128,11 @@ const crearProducto = async (req, res) => {
       .input('IdCategoriaInventario', sql.Int,            IdCategoriaInventario)
       .input('NombreProducto',        sql.NVarChar,       NombreProducto)
       .input('Cantidad',              sql.Decimal(10, 3), Cantidad || 0)
+      .input('ImagenUrl',             sql.NVarChar,       ImagenUrl || null)
       .query(`
-        INSERT INTO cafeteriadb.inventario (IdCategoriaInventario, NombreProducto, Cantidad)
+        INSERT INTO cafeteriadb.inventario (IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl)
         OUTPUT INSERTED.IdInventario
-        VALUES (@IdCategoriaInventario, @NombreProducto, @Cantidad)
+        VALUES (@IdCategoriaInventario, @NombreProducto, @Cantidad, @ImagenUrl)
       `);
 
     res.status(201).json({

@@ -441,6 +441,182 @@ function cerrarModalOrdenar() {
   ordenModal.style.display = 'none';
 }
 
+// =============================================
+//  AGREGAR PRODUCTO
+// =============================================
+function abrirModalAgregar() {
+  const modalAgregar = document.getElementById('modalAgregarProducto');
+  if (modalAgregar) {
+    document.getElementById('formAgregarProducto').reset();
+    resetearPrevisualizacion();
+    modalAgregar.style.display = 'flex';
+    setTimeout(() => document.getElementById('nuevoNombreProducto').focus(), 100);
+  }
+}
+
+function cerrarModalAgregar() {
+  const modalAgregar = document.getElementById('modalAgregarProducto');
+  if (modalAgregar) {
+    modalAgregar.style.display = 'none';
+    document.getElementById('formAgregarProducto').reset();
+    resetearPrevisualizacion();
+  }
+}
+
+function resetearPrevisualizacion() {
+  const prev = document.getElementById('previewImagen');
+  const wrap = document.getElementById('previewWrap');
+  if (prev) prev.src = '';
+  if (wrap) wrap.style.display = 'none';
+}
+
+async function crearNuevoProducto(nombre, cantidad, imagenUrl) {
+  const categoriaId = obtenerCategoriaActual();
+  try {
+    const response = await fetch(`${API_URL}/api/inventario/producto`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        IdCategoriaInventario: categoriaId,
+        NombreProducto:        nombre,
+        Cantidad:              cantidad,
+        ImagenUrl:             imagenUrl || null
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      cerrarModalAgregar();
+      mostrarToast(`✅ "${nombre}" agregado al inventario`);
+      agregarTarjetaProducto(nombre, cantidad, imagenUrl);
+    } else {
+      throw new Error(data.message || 'Error al crear el producto');
+    }
+  } catch (error) {
+    console.error('❌ Error al crear producto:', error);
+    alert('Error al crear el producto: ' + error.message);
+  }
+}
+
+function agregarTarjetaProducto(nombre, cantidad, imagenUrl) {
+  const contenedor = document.querySelector('.inventario');
+  if (!contenedor) return;
+
+  const imgHTML = imagenUrl
+    ? `<img src="${imagenUrl}" alt="${nombre}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+       <div class="producto-sin-imagen" style="display:none"><i class="fa-solid fa-box"></i></div>`
+    : `<div class="producto-sin-imagen"><i class="fa-solid fa-box"></i></div>`;
+
+  const div = document.createElement('div');
+  div.className = 'producto producto-nuevo';
+  div.innerHTML = `
+    <h3 class="nombre_del_producto">${nombre}</h3>
+    ${imgHTML}
+    <p>Cantidad: <input type="number" readonly class="cantidad_producto" value="${cantidad}"></p>
+    <div class="botones">
+      <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+      <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+      <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  `;
+  contenedor.appendChild(div);
+
+  div.querySelector('.btn_editar').onclick  = () => { productoActual = div; abrirModal(nombre); };
+  div.querySelector('.btn_ordenar').onclick  = () => abrirModalOrdenar(nombre);
+  div.querySelector('.btn_eliminar').onclick = () => abrirModalEliminar(nombre, div);
+
+  requestAnimationFrame(() => div.classList.add('producto-visible'));
+}
+
+// =============================================
+//  ELIMINAR PRODUCTO
+// =============================================
+let productoAEliminar = null;
+let elementoAEliminar = null;
+
+function abrirModalEliminar(nombre, elemento) {
+  productoAEliminar = nombre;
+  elementoAEliminar = elemento;
+
+  const modalEliminar = document.getElementById('modalEliminarProducto');
+  if (modalEliminar) {
+    document.getElementById('nombreProductoEliminar').textContent = nombre;
+    modalEliminar.style.display = 'flex';
+  }
+}
+
+function cerrarModalEliminar() {
+  const modalEliminar = document.getElementById('modalEliminarProducto');
+  if (modalEliminar) modalEliminar.style.display = 'none';
+  productoAEliminar = null;
+  elementoAEliminar = null;
+}
+
+async function confirmarEliminarProducto() {
+  if (!productoAEliminar) return;
+
+  const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+  if (btnConfirmar) {
+    btnConfirmar.disabled    = true;
+    btnConfirmar.textContent = 'Eliminando...';
+  }
+
+  try {
+    const idProducto = await obtenerIdProducto(productoAEliminar);
+    if (!idProducto) {
+      alert('Error: No se encontró el producto en la base de datos');
+      cerrarModalEliminar();
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/api/inventario/producto/${idProducto}`, {
+      method: 'DELETE'
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      const nombreEliminado = productoAEliminar;
+      cerrarModalEliminar();
+      if (elementoAEliminar) {
+        elementoAEliminar.style.transition = 'all 0.35s ease';
+        elementoAEliminar.style.opacity    = '0';
+        elementoAEliminar.style.transform  = 'scale(0.85)';
+        setTimeout(() => elementoAEliminar.remove(), 350);
+      }
+      mostrarToast(`🗑️ Producto "${nombreEliminado}" eliminado`);
+    } else {
+      throw new Error(data.message || 'Error al eliminar el producto');
+    }
+  } catch (error) {
+    console.error('❌ Error al eliminar producto:', error);
+    alert('Error al eliminar el producto: ' + error.message);
+    cerrarModalEliminar();
+  } finally {
+    if (btnConfirmar) {
+      btnConfirmar.disabled    = false;
+      btnConfirmar.textContent = 'Sí, eliminar';
+    }
+  }
+}
+
+// =============================================
+//  TOAST DE NOTIFICACIÓN
+// =============================================
+function mostrarToast(mensaje) {
+  let toast = document.getElementById('inventario-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'inventario-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = mensaje;
+  toast.classList.add('toast-visible');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('toast-visible'), 3500);
+}
+
 function agregarEventListeners() {
   const seAplicaronRestricciones = deshabilitarFuncionesInventario();
   if (seAplicaronRestricciones) return;
@@ -466,6 +642,18 @@ function agregarEventListeners() {
         ?.querySelector('.nombre_del_producto')?.textContent?.trim();
       if (nombre) {
         abrirModalOrdenar(nombre);
+      } else {
+        alert('Error: No se pudo obtener el nombre del producto');
+      }
+    };
+  });
+
+  document.querySelectorAll('.btn_eliminar').forEach(boton => {
+    boton.onclick = function() {
+      const elemento = this.closest('.producto');
+      const nombre   = elemento?.querySelector('.nombre_del_producto')?.textContent?.trim();
+      if (nombre) {
+        abrirModalEliminar(nombre, elemento);
       } else {
         alert('Error: No se pudo obtener el nombre del producto');
       }
@@ -507,6 +695,45 @@ if (ordenForm) {
   });
 }
 
+// Form Agregar Producto
+document.getElementById('formAgregarProducto')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const nombre    = document.getElementById('nuevoNombreProducto').value.trim();
+  const cantidad  = parseFloat(document.getElementById('nuevaCantidadProducto').value) || 0;
+  const imagenUrl = document.getElementById('nuevaImagenUrl')?.value.trim() || '';
+  if (!nombre) {
+    alert('Por favor ingresa el nombre del producto');
+    return;
+  }
+  const btnSubmit = this.querySelector('button[type="submit"]');
+  if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
+  await crearNuevoProducto(nombre, cantidad, imagenUrl);
+  if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i class="fa-solid fa-circle-plus"></i> Agregar Producto'; }
+});
+
+// Previsualización de imagen en vivo
+document.getElementById('nuevaImagenUrl')?.addEventListener('input', function() {
+  const url  = this.value.trim();
+  const prev = document.getElementById('previewImagen');
+  const wrap = document.getElementById('previewWrap');
+  if (!prev || !wrap) return;
+  if (url) {
+    prev.src = url;
+    wrap.style.display = 'block';
+    prev.onerror = () => { wrap.style.display = 'none'; prev.src = ''; };
+    prev.onload  = () => { wrap.style.display = 'block'; };
+  } else {
+    wrap.style.display = 'none';
+    prev.src = '';
+  }
+});
+
+// Botón confirmar eliminar
+document.getElementById('btnConfirmarEliminar')?.addEventListener('click', confirmarEliminarProducto);
+
+// Botón agregar en encabezado
+document.getElementById('btnAgregarProducto')?.addEventListener('click', abrirModalAgregar);
+
 if (spanCerrar)  spanCerrar.addEventListener('click',  cerrarModal);
 if (btnCancelar) btnCancelar.addEventListener('click', cerrarModal);
 if (closeButton) closeButton.addEventListener('click', cerrarModalOrdenar);
@@ -520,6 +747,8 @@ window.addEventListener('click', function(e) {
   if (e.target === document.getElementById('modalReporteInventario')) {
     cerrarModalReporte();
   }
+  if (e.target === document.getElementById('modalAgregarProducto'))  cerrarModalAgregar();
+  if (e.target === document.getElementById('modalEliminarProducto')) cerrarModalEliminar();
 });
 
 function mostrarErrorCarga(error) {
