@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
   <header>
@@ -33,62 +35,10 @@
     </div>
 
     <section class="inventario">
-
-      <div class="producto">
-        <h3 class="nombre_del_producto">Bebida caliente</h3>
-        <img src="imagenes/vaso_caliente.jpg" alt="Bebida caliente">
-        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
-        <div class="botones">
-          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
-          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
-        </div>
+      <div class="cargando-inventario" style="grid-column: 1/-1; text-align: center; padding: 40px; color: #a1887f;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.8;"></i>
+        <p style="font-size: 16px; font-weight: 500;">Cargando productos...</p>
       </div>
-
-      <div class="producto">
-        <h3 class="nombre_del_producto">Bebida fría</h3>
-        <img src="imagenes/vaso_frio.jpg" alt="Bebida fría">
-        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
-        <div class="botones">
-          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
-          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </div>
-
-      <div class="producto">
-        <h3 class="nombre_del_producto">Servilletas</h3>
-        <img src="imagenes/servilletas.jpg" alt="Servilletas">
-        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
-        <div class="botones">
-          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
-          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </div>
-
-      <div class="producto">
-        <h3 class="nombre_del_producto">Manga aislante</h3>
-        <img src="imagenes/manga_aislante.jpg" alt="Manga aislante">
-        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
-        <div class="botones">
-          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
-          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </div>
-
-      <div class="producto">
-        <h3 class="nombre_del_producto">Popotes</h3>
-        <img src="imagenes/popotes.jpg" alt="Popotes">
-        <p>Cantidad: <input type="number" readonly class="cantidad_producto"></p>
-        <div class="botones">
-          <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
-          <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
-          <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </div>
-
     </section>
   </main>
 
@@ -153,7 +103,8 @@
           <input type="number" id="nuevaCantidadProducto" min="0" step="0.001" value="0">
         </div>
         <div class="form_grupo">
-          <label for="nuevaImagenUrl"><i class="fa-solid fa-image"></i> URL de imagen <span style="font-weight:400;color:#a1887f">(opcional)</span></label>
+          <label for="nuevaImagenUrl"><i class="fa-solid fa-image"></i> URL de imagen <span
+              style="font-weight:400;color:#a1887f">(opcional)</span></label>
           <input type="url" id="nuevaImagenUrl" placeholder="https://..." autocomplete="off">
           <div id="previewWrap" style="display:none; margin-top:8px; text-align:center;">
             <img id="previewImagen" src="" alt="Previsualización"
@@ -203,4 +154,5 @@
   <script src="../../assets/js/inventario.js"></script>
 
 </body>
+
 </html>

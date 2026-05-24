@@ -4,7 +4,7 @@ const getProducto = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request()
       .input('id', sql.Int, id)
       .query(`
@@ -26,7 +26,7 @@ const getProducto = async (req, res) => {
 };
 
 const actualizarProducto = async (req, res) => {
-  const { id }     = req.params;
+  const { id } = req.params;
   const { cantidad } = req.body;
 
   if (cantidad === undefined) {
@@ -39,10 +39,10 @@ const actualizarProducto = async (req, res) => {
   }
 
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request()
       .input('cantidad', sql.Decimal(10, 3), nuevaCantidad)
-      .input('id',       sql.Int,            id)
+      .input('id', sql.Int, id)
       .query(`
         UPDATE cafeteriadb.inventario
         SET Cantidad = @cantidad
@@ -62,12 +62,12 @@ const actualizarProducto = async (req, res) => {
       `);
 
     res.json({
-      success:              true,
-      message:              'Producto actualizado correctamente',
+      success: true,
+      message: 'Producto actualizado correctamente',
       cantidad_actualizada: nuevaCantidad,
       producto: {
-        id:       updated.recordset[0].IdInventario,
-        nombre:   updated.recordset[0].NombreProducto,
+        id: updated.recordset[0].IdInventario,
+        nombre: updated.recordset[0].NombreProducto,
         cantidad: updated.recordset[0].Cantidad
       }
     });
@@ -82,12 +82,12 @@ const getProductosPorCategoria = async (req, res) => {
   const { idCategoria } = req.params;
 
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request()
       .input('idCategoria', sql.Int, idCategoria)
       .query(`
         SELECT
-          i.IdInventario, i.NombreProducto, i.Cantidad, c.Nombre as Categoria
+          i.IdInventario, i.NombreProducto, i.Cantidad, i.ImagenUrl, c.Nombre as Categoria
         FROM cafeteriadb.inventario i
         JOIN cafeteriadb.categorias_inventario c ON i.IdCategoriaInventario = c.IdCategoriaInventario
         WHERE i.IdCategoriaInventario = @idCategoria
@@ -104,7 +104,7 @@ const getProductosPorCategoria = async (req, res) => {
 
 const getCategorias = async (req, res) => {
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request().query(`
       SELECT IdCategoriaInventario, Nombre, Descripcion
       FROM cafeteriadb.categorias_inventario
@@ -123,12 +123,12 @@ const crearProducto = async (req, res) => {
   const { IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl } = req.body;
 
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request()
-      .input('IdCategoriaInventario', sql.Int,            IdCategoriaInventario)
-      .input('NombreProducto',        sql.NVarChar,       NombreProducto)
-      .input('Cantidad',              sql.Decimal(10, 3), Cantidad || 0)
-      .input('ImagenUrl',             sql.NVarChar,       ImagenUrl || null)
+      .input('IdCategoriaInventario', sql.Int, IdCategoriaInventario)
+      .input('NombreProducto', sql.NVarChar, NombreProducto)
+      .input('Cantidad', sql.Decimal(10, 3), Cantidad || 0)
+      .input('ImagenUrl', sql.NVarChar, ImagenUrl || null)
       .query(`
         INSERT INTO cafeteriadb.inventario (IdCategoriaInventario, NombreProducto, Cantidad, ImagenUrl)
         OUTPUT INSERTED.IdInventario
@@ -138,7 +138,7 @@ const crearProducto = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Producto creado correctamente',
-      id:      result.recordset[0].IdInventario
+      id: result.recordset[0].IdInventario
     });
 
   } catch (error) {
@@ -151,16 +151,33 @@ const eliminarProducto = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const pool   = await getPool();
-    const result = await pool.request()
-      .input('id', sql.Int, id)
-      .query('DELETE FROM cafeteriadb.inventario WHERE IdInventario = @id');
+    const pool = await getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-    if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+    try {
+      const request = new sql.Request(transaction);
+      
+      // 1. Eliminar referencias del producto en recetas
+      await request
+        .input('id', sql.Int, id)
+        .query('DELETE FROM cafeteriadb.recetas WHERE IdInventario = @id');
+
+      // 2. Eliminar el producto de la tabla inventario
+      const deleteResult = await request.query('DELETE FROM cafeteriadb.inventario WHERE IdInventario = @id');
+
+      if (deleteResult.rowsAffected[0] === 0) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, message: 'Producto no encontrado en inventario' });
+      }
+
+      await transaction.commit();
+      res.json({ success: true, message: 'Producto eliminado correctamente' });
+
+    } catch (innerError) {
+      await transaction.rollback();
+      throw innerError;
     }
-
-    res.json({ success: true, message: 'Producto eliminado correctamente' });
 
   } catch (error) {
     console.error('❌ Error al eliminar producto:', error);
@@ -190,14 +207,14 @@ const getStatus = async (req, res) => {
       .query('SELECT COUNT(*) as total FROM cafeteriadb.inventario');
 
     res.json({
-      status:   'ok',
+      status: 'ok',
       database: 'conectado',
       tablas: {
-        inventario:            tablaInv.recordset[0].existe > 0,
+        inventario: tablaInv.recordset[0].existe > 0,
         categorias_inventario: tablaCat.recordset[0].existe > 0
       },
       total_productos: conteo.recordset[0].total,
-      timestamp:       new Date().toISOString()
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
@@ -208,7 +225,7 @@ const getStatus = async (req, res) => {
 
 const getInventarioCompleto = async (req, res) => {
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request().query(`
       SELECT * FROM cafeteriadb.vw_inventario_completo
       ORDER BY Categoria, Nombre
@@ -223,7 +240,7 @@ const getInventarioCompleto = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'La vista vw_inventario_completo no existe.',
-        error:   error.message
+        error: error.message
       });
     }
 
@@ -233,7 +250,7 @@ const getInventarioCompleto = async (req, res) => {
 
 const getStockCritico = async (req, res) => {
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request().query(`
       SELECT * FROM cafeteriadb.vw_stock_critico
       ORDER BY Cantidad ASC
@@ -248,7 +265,7 @@ const getStockCritico = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'La vista vw_stock_critico no existe.',
-        error:   error.message
+        error: error.message
       });
     }
 
@@ -258,7 +275,7 @@ const getStockCritico = async (req, res) => {
 
 const getStockBajo = async (req, res) => {
   try {
-    const pool   = await getPool();
+    const pool = await getPool();
     const result = await pool.request().query(`
       SELECT
         i.IdInventario as ID,

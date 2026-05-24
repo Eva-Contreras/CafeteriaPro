@@ -1,5 +1,125 @@
 const API_URL = 'http://localhost:3000';
 
+const MAPA_IMAGENES_DEFAULT = {
+  // Bebidas
+  "café molido": "imagenes/cafe_molido.jpeg",
+  "leche entera": "imagenes/leche_entera.jpg",
+  "leche deslactosada": "imagenes/leche_deslactosada.jpg",
+  "leche de almendras": "imagenes/leche_almendra.jpg",
+  "azúcar estándar": "imagenes/azucar_estandar.jpg",
+  "stevia": "imagenes/stevia.jpeg",
+  "jarabe de vainilla": "imagenes/jarabe_vainilla.jpg",
+  "jarabe de chocolate": "imagenes/jarabe_chocolate.jpg",
+  "té negro": "imagenes/te_negro.jpg",
+  "agua": "imagenes/agua.jpg",
+  "crema para batir": "imagenes/crema_para_batir.jpg",
+  "canela molida": "imagenes/canela_molida.jpg",
+  
+  // Comidas
+  "sandwich de jamón y queso": "imagenes/sandwich_jamon_queso.jpg",
+  "wrap de pollo": "imagenes/wrap_pollo.jpg",
+  "croissant": "imagenes/croissant.jpg",
+  "muffin": "imagenes/muffin.jpg",
+  "brownie": "imagenes/brownie.jpg",
+  "dona": "imagenes/dona.jpg",
+  
+  // Envases
+  "bebida caliente": "imagenes/vaso_caliente.jpg",
+  "bebida fría": "imagenes/vaso_frio.jpg",
+  "servilletas": "imagenes/servilletas.jpg",
+  "manga aislante": "imagenes/manga_aislante.jpg",
+  "popotes": "imagenes/popotes.jpg",
+  
+  // Limpieza
+  "bolsa de basura": "imagenes/bolsa_basura.jpg",
+  "esponja": "imagenes/esponja.jpg",
+  "desinfectante": "imagenes/desinfectante.jpg",
+  "microfibra": "imagenes/microfibra.jpg"
+};
+
+function renderizarProductos(productos) {
+  const contenedor = document.querySelector('.inventario');
+  if (!contenedor) return;
+
+  contenedor.innerHTML = ''; // Limpiar el contenedor estático o previo
+
+  if (productos.length === 0) {
+    contenedor.innerHTML = `
+      <div class="sin-productos" style="grid-column: 1/-1; text-align: center; padding: 40px; color: #a1887f;">
+        <i class="fa-solid fa-box-open" style="font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.6;"></i>
+        <p style="font-size: 18px; font-weight: 500;">No hay productos en esta categoría</p>
+        <p style="font-size: 14px; opacity: 0.8; margin-top: 4px;">Usa el botón "Agregar Producto" en la parte superior para añadir uno nuevo.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const rol = localStorage.getItem('usuarioRol');
+  const esCajero = rol === 'Cajero/Mesero';
+
+  productos.forEach(prod => {
+    const nombre = prod.NombreProducto;
+    const cantidad = parseFloat(prod.Cantidad) || 0;
+    
+    // Obtener la imagen correcta
+    let imagenUrl = prod.ImagenUrl;
+    if (!imagenUrl) {
+      const nombreNorm = nombre?.trim().toLowerCase();
+      imagenUrl = MAPA_IMAGENES_DEFAULT[nombreNorm] || '';
+    }
+
+    const imgHTML = imagenUrl
+      ? `<img src="${imagenUrl}" alt="${nombre}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="producto-sin-imagen" style="display:none"><i class="fa-solid fa-box"></i></div>`
+      : `<div class="producto-sin-imagen"><i class="fa-solid fa-box"></i></div>`;
+
+    const div = document.createElement('div');
+    div.className = 'producto producto-visible';
+    div.innerHTML = `
+      <h3 class="nombre_del_producto">${nombre}</h3>
+      ${imgHTML}
+      <p>Cantidad: <input type="number" readonly class="cantidad_producto" value="${cantidad}"></p>
+      <div class="botones">
+        <button class="btn_editar" title="Editar cantidad"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn_ordenar" title="Ordenar"><i class="fa-solid fa-plus"></i></button>
+        <button class="btn_eliminar" title="Eliminar producto"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `;
+    contenedor.appendChild(div);
+
+    // Configurar listeners individuales
+    const btnEditar = div.querySelector('.btn_editar');
+    const btnOrdenar = div.querySelector('.btn_ordenar');
+    const btnEliminar = div.querySelector('.btn_eliminar');
+
+    if (esCajero) {
+      [btnEditar, btnOrdenar, btnEliminar].forEach(btn => {
+        if (btn) {
+          btn.disabled = true;
+          btn.style.opacity = '0.4';
+          btn.style.cursor = 'not-allowed';
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            alert('Acceso de modificación restringido al rol de Cajero/Mesero');
+          };
+        }
+      });
+    } else {
+      if (btnEditar) btnEditar.onclick = () => { productoActual = div; abrirModal(nombre); };
+      if (btnOrdenar) btnOrdenar.onclick = () => abrirModalOrdenar(nombre);
+      if (btnEliminar) btnEliminar.onclick = () => abrirModalEliminar(nombre, div);
+    }
+  });
+
+  // Re-enlazar listeners globales
+  document.getElementById('btnReporteInventario')?.replaceWith(
+    document.getElementById('btnReporteInventario').cloneNode(true)
+  );
+  document.getElementById('btnReporteInventario')
+    ?.addEventListener('click', abrirModalReporte);
+}
+
+
 const userRole = localStorage.getItem('usuarioRol');
 
 if (userRole === 'Encargado de inventario') {
@@ -98,29 +218,12 @@ async function cargarProductos() {
     const productos = await response.json();
     console.log(`✅ ${productos.length} productos recibidos`);
 
-    actualizarCantidadesProductos(productos);
+    renderizarProductos(productos);
 
   } catch (error) {
     console.error('❌ Error al cargar productos:', error);
     mostrarErrorCarga(error);
   }
-}
-
-function actualizarCantidadesProductos(productos) {
-  document.querySelectorAll('.producto').forEach(productoElement => {
-    const nombreProducto = productoElement.querySelector('.nombre_del_producto')?.textContent?.trim();
-    if (!nombreProducto) return;
-
-    const productoBD = productos.find(p => p.NombreProducto?.trim() === nombreProducto);
-    if (productoBD) {
-      const inputCantidad = productoElement.querySelector('.cantidad_producto');
-      if (inputCantidad) {
-        inputCantidad.value = parseFloat(productoBD.Cantidad) || 0;
-      }
-    }
-  });
-
-  agregarEventListeners();
 }
 
 async function obtenerIdProducto(nombreProducto) {
@@ -489,7 +592,7 @@ async function crearNuevoProducto(nombre, cantidad, imagenUrl) {
     if (data.success) {
       cerrarModalAgregar();
       mostrarToast(`✅ "${nombre}" agregado al inventario`);
-      agregarTarjetaProducto(nombre, cantidad, imagenUrl);
+      cargarProductos();
     } else {
       throw new Error(data.message || 'Error al crear el producto');
     }
@@ -575,17 +678,11 @@ async function confirmarEliminarProducto() {
     });
 
     const data = await response.json();
-
     if (data.success) {
       const nombreEliminado = productoAEliminar;
       cerrarModalEliminar();
-      if (elementoAEliminar) {
-        elementoAEliminar.style.transition = 'all 0.35s ease';
-        elementoAEliminar.style.opacity    = '0';
-        elementoAEliminar.style.transform  = 'scale(0.85)';
-        setTimeout(() => elementoAEliminar.remove(), 350);
-      }
-      mostrarToast(`🗑️ Producto "${nombreEliminado}" eliminado`);
+      alert(`🗑️ Producto "${nombreEliminado}" eliminado con éxito`);
+      location.reload();
     } else {
       throw new Error(data.message || 'Error al eliminar el producto');
     }
