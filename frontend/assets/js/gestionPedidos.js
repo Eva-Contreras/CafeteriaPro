@@ -121,8 +121,13 @@ function mostrarResumenPedido() {
   let subtotal = 0;
 
   if (pedidoActual.length === 0) {
-    listaPedidoModal.innerHTML = '<li>No hay productos en el pedido.</li>';
-    totalModal.textContent = '$0.00';
+    listaPedidoModal.innerHTML = '<li style="padding: 15px; text-align: center; color: #795548; font-style: italic;">No hay productos en el pedido actual.</li>';
+    totalModal.innerHTML = `
+      <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold; color: #3e2723;">
+        <span>Total:</span>
+        <span>$0.00</span>
+      </div>
+    `;
   } else {
     pedidoActual.forEach(item => {
       const precioNumero = parseFloat(item.precio.replace('Precio: $', '').trim());
@@ -130,7 +135,16 @@ function mostrarResumenPedido() {
       subtotal += itemSubtotal;
 
       const li = document.createElement('li');
-      li.innerHTML = `${item.nombre} (x${item.cantidad}) - $${precioNumero.toFixed(2)} c/u = $${itemSubtotal.toFixed(2)}`;
+      li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1.5px solid #f4ece8; color: #4e342e; font-size: 0.95rem;';
+      li.innerHTML = `
+        <div style="flex: 1; padding-right: 15px; text-align: left;">
+          <strong style="color: #3e2723; display: block; font-size: 0.98rem; font-weight: 600;">${item.nombre}</strong>
+          <span style="font-size: 0.82rem; color: #8d6e63; font-weight: 500;">Cantidad: ${item.cantidad} &times; $${precioNumero.toFixed(2)} c/u</span>
+        </div>
+        <div style="font-weight: 600; color: #5d4037; font-size: 1rem; min-width: 80px; text-align: right;">
+          $${itemSubtotal.toFixed(2)}
+        </div>
+      `;
       listaPedidoModal.appendChild(li);
     });
 
@@ -138,9 +152,18 @@ function mostrarResumenPedido() {
     const total = subtotal + iva;
 
     totalModal.innerHTML = `
-      <div><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</div>
-      <div><strong>IVA (16%):</strong> $${iva.toFixed(2)}</div>
-      <div style="font-size:1.2em; margin-top:5px;"><strong>Total:</strong> $${total.toFixed(2)}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e8ddd8; padding-bottom: 8px; font-weight: 500;">
+        <span>Subtotal:</span>
+        <span style="color: #5d4037;">$${subtotal.toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e8ddd8; padding-bottom: 8px; font-weight: 500;">
+        <span>IVA (16%):</span>
+        <span style="color: #5d4037;">$${iva.toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.25rem; font-weight: 700; color: #3e2723; padding-top: 6px;">
+        <span>Total:</span>
+        <span style="color: #2e7d32;">$${total.toFixed(2)}</span>
+      </div>
     `;
   }
   resumenModal.style.display = 'block';
@@ -289,7 +312,12 @@ cerrarYConfirmarButton.addEventListener('click', async () => {
     const precio = parseFloat(item.precio.replace('Precio: $', '').trim());
     const subtotal = precio * item.cantidad;
     total += subtotal;
-    return { id: item.idProducto, cantidad: item.cantidad, subtotal: parseFloat(subtotal.toFixed(2)) };
+    return { 
+      id: item.idProducto, 
+      cantidad: item.cantidad, 
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      personalizado: item.personalizado 
+    };
   });
 
   const pedidoData = {
@@ -320,7 +348,7 @@ cerrarYConfirmarButton.addEventListener('click', async () => {
   }
 });
 
-document.getElementById('productsContainer').addEventListener('click', (e) => {
+document.getElementById('productsContainer').addEventListener('click', async (e) => {
   const target = e.target;
   const card = target.closest('.card');
   if (!card) return;
@@ -335,6 +363,64 @@ document.getElementById('productsContainer').addEventListener('click', (e) => {
     const cantidad = parseInt(cantidadInput.value, 10);
 
     if (cantidad < 1 || isNaN(cantidad)) return alert('Cantidad inválida');
+
+    // Verificar si el producto es de tipo Bebidas
+    const productObj = allProducts.find(p => p.IdProducto === idProducto);
+    if (productObj && productObj.Categoria === 'Bebidas') {
+      // Validar primero si hay un cliente o mesa seleccionada
+      const idCliente = document.getElementById('idClienteFinal').value;
+      if (!idCliente) {
+        alert('⚠️ Selecciona un cliente o mesa primero antes de personalizar la bebida.');
+        clienteInitModal.style.display = 'flex';
+        return;
+      }
+
+      // Abrir Modal de Personalización
+      const personalizadoModal = document.getElementById('personalizadoModal');
+      const persNombreProducto = document.getElementById('persNombreProducto');
+      const persLeche = document.getElementById('persLeche');
+      const persShotsInput = document.getElementById('persShots');
+
+      persNombreProducto.textContent = productObj.Nombre;
+      persNombreProducto.dataset.id = idProducto;
+      persShotsInput.value = '1';
+
+      // Resetear visualización de los botones de shots
+      document.querySelectorAll('.shot-btn').forEach(btn => {
+        if (btn.dataset.value === '1') {
+          btn.classList.add('active');
+          btn.style.border = '2px solid #8d6e63';
+          btn.style.background = '#efebe9';
+          btn.style.color = '#5d4037';
+        } else {
+          btn.classList.remove('active');
+          btn.style.border = '2px solid #eae1db';
+          btn.style.background = 'white';
+          btn.style.color = '#795548';
+        }
+      });
+
+      // Cargar tipos de leche desde la base de datos
+      try {
+        persLeche.innerHTML = '<option value="">Cargando opciones...</option>';
+        const res = await fetch(`${API_URL}/api/pedidos/leches`);
+        if (!res.ok) throw new Error('Error al obtener leches');
+        const leches = await res.json();
+        
+        if (leches.length === 0) {
+          persLeche.innerHTML = '<option value="0">No aplica (Sin Leche)</option>';
+        } else {
+          persLeche.innerHTML = '<option value="0">No aplica (Sin Leche)</option>' + 
+            leches.map(l => `<option value="${l.IdLeche}">${l.Nombre}</option>`).join('');
+        }
+      } catch (err) {
+        console.error(err);
+        persLeche.innerHTML = '<option value="">Error al cargar tipos de leche</option>';
+      }
+
+      personalizadoModal.style.display = 'flex';
+      return;
+    }
 
     const existente = pedidoActual.find(p => p.idProducto === idProducto);
     if (existente) {
@@ -543,5 +629,115 @@ function actualizarSelectsAbiertos() {
     const valorActual = select.value;
     select.innerHTML = nuevasOpciones;
     select.value = valorActual;
+  });
+}
+
+// ==========================================
+// FUNCIONALIDAD DE PERSONALIZACIÓN DE BEBIDAS
+// ==========================================
+
+const personalizadoModal = document.getElementById('personalizadoModal');
+const btnClosePersonalizado = document.getElementById('btnClosePersonalizado');
+const btnCancelarPersonalizado = document.getElementById('btnCancelarPersonalizado');
+const formPersonalizado = document.getElementById('formPersonalizado');
+
+// Manejar los botones de cantidad de Shots de espresso
+document.querySelectorAll('.shot-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.shot-btn').forEach(b => {
+      b.classList.remove('active');
+      b.style.border = '2px solid #eae1db';
+      b.style.background = 'white';
+      b.style.color = '#795548';
+    });
+    btn.classList.add('active');
+    btn.style.border = '2px solid #8d6e63';
+    btn.style.background = '#efebe9';
+    btn.style.color = '#5d4037';
+    document.getElementById('persShots').value = btn.dataset.value;
+  });
+});
+
+// Cerrar modal de personalización
+if (btnClosePersonalizado) {
+  btnClosePersonalizado.addEventListener('click', () => {
+    personalizadoModal.style.display = 'none';
+  });
+}
+
+if (btnCancelarPersonalizado) {
+  btnCancelarPersonalizado.addEventListener('click', () => {
+    personalizadoModal.style.display = 'none';
+  });
+}
+
+// Cerrar al hacer clic fuera del modal
+window.addEventListener('click', (event) => {
+  if (event.target === personalizadoModal) {
+    personalizadoModal.style.display = 'none';
+  }
+});
+
+// Enviar el pedido personalizado al backend
+if (formPersonalizado) {
+  formPersonalizado.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const idProducto = parseInt(document.getElementById('persNombreProducto').dataset.id, 10);
+    const idLeche = parseInt(document.getElementById('persLeche').value, 10);
+    const shots = parseInt(document.getElementById('persShots').value, 10);
+    const idCliente = document.getElementById('idClienteFinal').value;
+
+    if (!idCliente) {
+      alert('⚠️ No hay cliente o mesa seleccionada.');
+      personalizadoModal.style.display = 'none';
+      clienteInitModal.style.display = 'flex';
+      return;
+    }
+
+    if (isNaN(idLeche)) {
+      alert('Por favor selecciona un tipo de leche.');
+      return;
+    }
+
+    const productObj = allProducts.find(p => p.IdProducto === idProducto);
+    if (!productObj) {
+      alert('Bebida no encontrada en el menú.');
+      return;
+    }
+
+    // Obtener descripción de la leche elegida
+    let descLeche = 'Sin leche';
+    if (idLeche > 0) {
+      const milkOption = document.querySelector('#persLeche option:checked');
+      descLeche = milkOption ? `Leche: ${milkOption.textContent.trim()}` : 'Leche';
+    }
+
+    const descShots = shots === 0 ? 'Sin espresso' : `${shots} Shot(s)`;
+    const nombreCustomizado = `${productObj.Nombre} (${descLeche}, ${descShots})`;
+    const precioFormat = `Precio: $${productObj.Precio}`;
+
+    // Agregar al carrito en memoria con su objeto de personalización
+    pedidoActual.push({
+      idProducto,
+      nombre: nombreCustomizado,
+      precio: precioFormat,
+      cantidad: 1,
+      personalizado: { idLeche, shots }
+    });
+
+    // Desactivar el botón check de esa tarjeta para evitar duplicados accidentales
+    const okButton = document.querySelector(`.card[data-id="${idProducto}"] .ok`);
+    if (okButton) {
+      okButton.disabled = true;
+      okButton.style.backgroundColor = '#ccc';
+      okButton.style.cursor = 'default';
+    }
+
+    // Cerrar el modal de personalización
+    personalizadoModal.style.display = 'none';
+
+    // Abrir de forma inmediata el modal de resumen/detalles de pedido
+    mostrarResumenPedido();
   });
 }

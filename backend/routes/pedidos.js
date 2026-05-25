@@ -7,11 +7,15 @@ const {
   getClientePedido,
   completarPedido,
   crearPedido,
-  enviarTicket
+  enviarTicket,
+  getTiposLeche,
+  crearPedidoPersonalizado
 } = require('../controllers/pedidosController');
 
 router.get('/', getPedidosPendientes);
 router.get('/completados', getPedidosCompletados);
+router.get('/leches', getTiposLeche);
+router.post('/personalizado', crearPedidoPersonalizado);
 router.get('/:id/detalle', getDetallePedido);
 router.get('/:id/cliente', getClientePedido);
 router.put('/:id/completar', completarPedido);

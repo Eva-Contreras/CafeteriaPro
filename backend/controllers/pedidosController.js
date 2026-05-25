@@ -103,7 +103,7 @@ const getClientePedido = async (req, res) => {
 
     res.json({
       nombre: result.recordset[0].Nombre,
-      email:  result.recordset[0].Email
+      email: result.recordset[0].Email
     });
 
   } catch (error) {
@@ -154,9 +154,9 @@ const crearPedido = async (req, res) => {
     const totalConIVA = parseFloat((parseFloat(total) + iva).toFixed(2));
 
     const pedidoResult = await transaction.request()
-      .input('idCliente',  sql.Int,            idCliente)
+      .input('idCliente', sql.Int, idCliente)
       .input('totalConIVA', sql.Decimal(10, 2), totalConIVA)
-      .input('idUsuario',  sql.Int,            idUsuario)
+      .input('idUsuario', sql.Int, idUsuario)
       .query(`
         INSERT INTO cafeteriadb.Pedidos (IdCliente, Total, IdUsuario, Estado)
         OUTPUT INSERTED.IdPedido
@@ -167,14 +167,115 @@ const crearPedido = async (req, res) => {
 
     for (const producto of productos) {
       await transaction.request()
-        .input('idPedido',   sql.Int,            idPedido)
-        .input('idProducto', sql.Int,            producto.id)
-        .input('cantidad',   sql.Int,            producto.cantidad)
-        .input('subtotal',   sql.Decimal(10, 2), producto.subtotal)
+        .input('idPedido', sql.Int, idPedido)
+        .input('idProducto', sql.Int, producto.id)
+        .input('cantidad', sql.Int, producto.cantidad)
+        .input('subtotal', sql.Decimal(10, 2), producto.subtotal)
         .query(`
           INSERT INTO cafeteriadb.DetallePedidos (IdPedido, IdProducto, Cantidad, Subtotal)
           VALUES (@idPedido, @idProducto, @cantidad, @subtotal)
         `);
+
+      // SI EL PRODUCTO ES PERSONALIZADO:
+      if (producto.personalizado) {
+        const { idLeche, shots } = producto.personalizado;
+        const request = new sql.Request(transaction);
+
+        // 1. Obtener la receta base del producto
+        const baseRecipeResult = await request
+          .input('idProd', sql.Int, producto.id)
+          .query('SELECT IdInventario, CantidadInsumo FROM cafeteriadb.recetas WHERE IdProducto = @idProd');
+
+        // 2. Obtener la leche seleccionada
+        let newMilk = null;
+        if (idLeche > 0) {
+          const selectedMilkResult = await request
+            .input('idLeche', sql.Int, idLeche)
+            .query('SELECT IdInventario, CantidadBase FROM cafeteriadb.TiposLeche WHERE IdLeche = @idLeche');
+          if (selectedMilkResult.recordset.length > 0) {
+            newMilk = selectedMilkResult.recordset[0];
+          }
+        }
+
+        // 3. Obtener todas las leches
+        const allMilksResult = await request.query('SELECT IdInventario FROM cafeteriadb.TiposLeche');
+        const allMilkInventarioIds = allMilksResult.recordset.map(m => m.IdInventario);
+
+        // 4. Obtener extra café
+        let extraCafe = 0;
+        if (shots > 0) {
+          const shotsResult = await request
+            .input('shotsCount', sql.Int, shots)
+            .query('SELECT ExtraCafe FROM cafeteriadb.ShotsCafe WHERE CantidadShots = @shotsCount');
+          if (shotsResult.recordset.length > 0) {
+            extraCafe = parseFloat(shotsResult.recordset[0].ExtraCafe);
+          }
+        }
+
+        // 5. Ajustar inventario (deshacer leche base y restar la personalizada)
+        const baseRecipe = baseRecipeResult.recordset;
+        const originalMilkInsumo = baseRecipe.find(item => allMilkInventarioIds.includes(item.IdInventario));
+
+        // Re-sumar la leche original (porque el trigger la descontó)
+        if (originalMilkInsumo) {
+          await request
+            .input('origMilkId', sql.Int, originalMilkInsumo.IdInventario)
+            .input('origMilkQty', sql.Decimal(10, 3), originalMilkInsumo.CantidadInsumo)
+            .query(`
+              UPDATE cafeteriadb.inventario
+              SET Cantidad = Cantidad - (-@origMilkQty)
+              WHERE IdInventario = @origMilkId
+            `);
+        }
+
+        // Restar la leche personalizada
+        if (newMilk) {
+          const milkStockRes = await request
+            .input('newMilkId', sql.Int, newMilk.IdInventario)
+            .query('SELECT Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE IdInventario = @newMilkId');
+          
+          if (milkStockRes.recordset.length > 0) {
+            const currentStock = parseFloat(milkStockRes.recordset[0].Cantidad);
+            const reqQty = parseFloat(newMilk.CantidadBase);
+            const nombreP = milkStockRes.recordset[0].NombreProducto;
+            if (currentStock < reqQty) {
+              throw new Error(`Stock insuficiente para '${nombreP}'. Disponible: ${currentStock}, Requerido: ${reqQty}`);
+            }
+          }
+
+          await request
+            .input('newMilkIdDeduct', sql.Int, newMilk.IdInventario)
+            .input('newMilkQtyDeduct', sql.Decimal(10, 3), newMilk.CantidadBase)
+            .query(`
+              UPDATE cafeteriadb.inventario
+              SET Cantidad = Cantidad - @newMilkQtyDeduct
+              WHERE IdInventario = @newMilkIdDeduct
+            `);
+        }
+
+        // Restar extra café
+        if (extraCafe > 0) {
+          const coffeeResult = await request.query("SELECT IdInventario, Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE NombreProducto = 'Café molido'");
+          if (coffeeResult.recordset.length > 0) {
+            const coffeeId = coffeeResult.recordset[0].IdInventario;
+            const currentStock = parseFloat(coffeeResult.recordset[0].Cantidad);
+            const nombreP = coffeeResult.recordset[0].NombreProducto;
+
+            if (currentStock < extraCafe) {
+              throw new Error(`Stock insuficiente para '${nombreP}'. Disponible: ${currentStock}, Requerido: ${extraCafe}`);
+            }
+
+            await request
+              .input('coffeeIdDeduct', sql.Int, coffeeId)
+              .input('coffeeQtyDeduct', sql.Decimal(10, 3), extraCafe)
+              .query(`
+                UPDATE cafeteriadb.inventario
+                SET Cantidad = Cantidad - @coffeeQtyDeduct
+                WHERE IdInventario = @coffeeIdDeduct
+              `);
+          }
+        }
+      }
     }
 
     await transaction.commit();
@@ -266,10 +367,10 @@ const enviarTicket = async (req, res) => {
     `;
 
     const info = await transporter.sendMail({
-      from:    process.env.EMAIL_USER,
-      to:      email,
+      from: process.env.EMAIL_USER,
+      to: email,
       subject: `Ticket de Compra - CoffeeTrack #${orderId}`,
-      html:    ticketHTML
+      html: ticketHTML
     });
 
     console.log('✅ Ticket enviado: %s', info.messageId);
@@ -281,6 +382,194 @@ const enviarTicket = async (req, res) => {
   }
 };
 
+const getTiposLeche = async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query('SELECT IdLeche, Nombre FROM cafeteriadb.TiposLeche ORDER BY Nombre');
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('❌ Error al obtener tipos de leche:', error);
+    res.status(500).json({ error: 'Error al obtener los tipos de leche de la base de datos' });
+  }
+};
+
+const crearPedidoPersonalizado = async (req, res) => {
+  const { idProducto, idLeche, shots, idCliente, idUsuario } = req.body;
+
+  if (idProducto === undefined || idLeche === undefined || shots === undefined || !idCliente || !idUsuario) {
+    return res.status(400).json({ success: false, message: 'Datos incompletos: idProducto, idLeche, shots, idCliente e idUsuario son requeridos' });
+  }
+
+  let transaction;
+  try {
+    const pool = await getPool();
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+      const request = new sql.Request(transaction);
+
+      // 1. Obtener la receta base del producto
+      const baseRecipeResult = await request
+        .input('idProd', sql.Int, idProducto)
+        .query('SELECT IdInventario, CantidadInsumo FROM cafeteriadb.recetas WHERE IdProducto = @idProd');
+
+      // 2. Obtener la leche seleccionada (si idLeche > 0. Si idLeche = 0 significa 'No aplica')
+      let newMilk = null;
+      if (idLeche > 0) {
+        const selectedMilkResult = await request
+          .input('idLeche', sql.Int, idLeche)
+          .query('SELECT IdInventario, CantidadBase FROM cafeteriadb.TiposLeche WHERE IdLeche = @idLeche');
+
+        if (selectedMilkResult.recordset.length === 0) {
+          throw new Error('El tipo de leche seleccionado no existe.');
+        }
+        newMilk = selectedMilkResult.recordset[0];
+      }
+
+      // 3. Obtener todas las posibles leches para identificarlas y removerlas de la receta base
+      const allMilksResult = await request.query('SELECT IdInventario FROM cafeteriadb.TiposLeche');
+      const allMilkInventarioIds = allMilksResult.recordset.map(m => m.IdInventario);
+
+      // 4. Obtener la configuración de shots (si shots > 0. Si shots = 0 significa 'No aplica')
+      let extraCafe = 0;
+      if (shots > 0) {
+        const shotsResult = await request
+          .input('shotsCount', sql.Int, shots)
+          .query('SELECT ExtraCafe FROM cafeteriadb.ShotsCafe WHERE CantidadShots = @shotsCount');
+
+        if (shotsResult.recordset.length === 0) {
+          throw new Error('La cantidad de shots seleccionada no es válida.');
+        }
+        extraCafe = parseFloat(shotsResult.recordset[0].ExtraCafe);
+      }
+
+      // 5. Modificar la receta en memoria
+      // Filtramos quitando la leche original (si tuviera)
+      const baseRecipe = baseRecipeResult.recordset;
+      const modifiedRecipe = baseRecipe.filter(item => !allMilkInventarioIds.includes(item.IdInventario));
+
+      // Agregamos la nueva leche seleccionada (si aplica)
+      if (newMilk) {
+        modifiedRecipe.push({
+          IdInventario: newMilk.IdInventario,
+          CantidadInsumo: parseFloat(newMilk.CantidadBase)
+        });
+      }
+
+      // Aumentamos café según shots
+      if (extraCafe > 0) {
+        const coffeeResult = await request.query("SELECT IdInventario FROM cafeteriadb.inventario WHERE NombreProducto = 'Café molido'");
+        if (coffeeResult.recordset.length === 0) {
+          throw new Error("No se encontró el insumo 'Café molido' en el inventario.");
+        }
+
+        const coffeeId = coffeeResult.recordset[0].IdInventario;
+        const coffeeIndex = modifiedRecipe.findIndex(item => item.IdInventario === coffeeId);
+        if (coffeeIndex !== -1) {
+          modifiedRecipe[coffeeIndex].CantidadInsumo = parseFloat(modifiedRecipe[coffeeIndex].CantidadInsumo) + extraCafe;
+        } else {
+          modifiedRecipe.push({
+            IdInventario: coffeeId,
+            CantidadInsumo: extraCafe
+          });
+        }
+      }
+
+      // 6. VALIDAR STOCK
+      for (const item of modifiedRecipe) {
+        const stockResult = await request
+          .input(`invId_${item.IdInventario}`, sql.Int, item.IdInventario)
+          .query(`SELECT Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE IdInventario = @invId_${item.IdInventario}`);
+
+        if (stockResult.recordset.length === 0) {
+          throw new Error(`El insumo con ID ${item.IdInventario} no se encuentra en el inventario.`);
+        }
+
+        const currentStock = parseFloat(stockResult.recordset[0].Cantidad);
+        const requiredAmount = parseFloat(item.CantidadInsumo);
+        const nombreProd = stockResult.recordset[0].NombreProducto;
+
+        if (currentStock < requiredAmount) {
+          throw new Error(`Stock insuficiente para '${nombreProd}'. Disponible: ${currentStock}, Requerido: ${requiredAmount}`);
+        }
+      }
+
+      // 7. DESCONTAR INVENTARIO
+      for (const item of modifiedRecipe) {
+        await request
+          .input(`deductId_${item.IdInventario}`, sql.Int, item.IdInventario)
+          .input(`deductQty_${item.IdInventario}`, sql.Decimal(10, 3), item.CantidadInsumo)
+          .query(`
+            UPDATE cafeteriadb.inventario
+            SET Cantidad = Cantidad - @deductQty_${item.IdInventario}
+            WHERE IdInventario = @deductId_${item.IdInventario}
+          `);
+      }
+
+      // 8. Crear el pedido en las tablas Pedidos y DetallePedidos
+      const productResult = await request
+        .input('pId', sql.Int, idProducto)
+        .query('SELECT Precio, Nombre FROM cafeteriadb.Productos WHERE IdProducto = @pId');
+
+      if (productResult.recordset.length === 0) {
+        throw new Error('Producto no encontrado en el catálogo de productos.');
+      }
+
+      const precioBase = parseFloat(productResult.recordset[0].Precio);
+      const nombreProdCat = productResult.recordset[0].Nombre;
+
+      // Calcular IVA y total
+      const ivaResult = await request
+        .input('totalPrice', sql.Decimal(10, 2), precioBase)
+        .query('SELECT cafeteriadb.CalcularIVA(@totalPrice) as iva');
+
+      const iva = parseFloat(ivaResult.recordset[0].iva);
+      const totalConIVA = parseFloat((precioBase + iva).toFixed(2));
+
+      // Insertar en Pedidos
+      const pedidoResult = await request
+        .input('pedIdCliente', sql.Int, idCliente)
+        .input('pedTotal', sql.Decimal(10, 2), totalConIVA)
+        .input('pedIdUsuario', sql.Int, idUsuario)
+        .query(`
+          INSERT INTO cafeteriadb.Pedidos (IdCliente, Total, IdUsuario, Estado)
+          OUTPUT INSERTED.IdPedido
+          VALUES (@pedIdCliente, @pedTotal, @pedIdUsuario, 'Pendiente')
+        `);
+
+      const idPedido = pedidoResult.recordset[0].IdPedido;
+
+      // Insertar en DetallePedidos
+      await request
+        .input('detIdPedido', sql.Int, idPedido)
+        .input('detIdProducto', sql.Int, idProducto)
+        .input('detCantidad', sql.Int, 1)
+        .input('detSubtotal', sql.Decimal(10, 2), precioBase)
+        .query(`
+          INSERT INTO cafeteriadb.DetallePedidos (IdPedido, IdProducto, Cantidad, Subtotal)
+          VALUES (@detIdPedido, @detIdProducto, @detCantidad, @detSubtotal)
+        `);
+
+      await transaction.commit();
+      res.json({
+        success: true,
+        message: 'Pedido personalizado registrado y descontado del inventario correctamente',
+        idPedido,
+        producto: nombreProdCat
+      });
+
+    } catch (innerError) {
+      await transaction.rollback();
+      throw innerError;
+    }
+
+  } catch (error) {
+    console.error('❌ Error al crear pedido personalizado:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getPedidosPendientes,
   getPedidosCompletados,
@@ -288,5 +577,7 @@ module.exports = {
   getClientePedido,
   completarPedido,
   crearPedido,
-  enviarTicket
+  enviarTicket,
+  getTiposLeche,
+  crearPedidoPersonalizado
 };
