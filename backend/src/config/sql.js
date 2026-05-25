@@ -1,7 +1,7 @@
 const sql = require('mssql');
 
 const config = {
-  server:   process.env.DB_HOST,
+  server:   process.env.DB_SERVER || process.env.DB_HOST,
   database: process.env.DB_NAME,
   user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -30,9 +30,9 @@ async function testDbConnection() {
   try {
     const pool = await getPool();
     await pool.request().query('SELECT 1');
-    console.log('✅ Conexión a SQL Server exitosa!');
+    console.log('✅ Conexión a la base de datos SQL Server exitosa!');
   } catch (err) {
-    console.error('❌ Error al conectar con SQL Server. Revisa tu archivo .env. Detalles:', err.message);
+    console.error('❌ Error al conectar con la base de datos SQL Server. Revisa tu archivo .env. Detalles:', err.message);
   }
 }
 
