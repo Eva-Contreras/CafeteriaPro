@@ -1,18 +1,17 @@
 const clientesService = require('../services/clientesService');
 
-module.exports = {
-  buscarClientes: async (req, res) => {
+class ClientesController {
+  async buscarClientes(req, res, next) {
     const { nombre } = req.query;
     try {
       const clientes = await clientesService.buscarClientes(nombre);
       res.json(clientes);
     } catch (error) {
-      console.error('Error al buscar cliente:', error);
-      res.status(500).json({ error: 'Error al buscar cliente' });
+      next(error);
     }
-  },
+  }
 
-  crearCliente: async (req, res) => {
+  async crearCliente(req, res, next) {
     const { nombre, email } = req.body;
     try {
       const client = await clientesService.crearCliente(nombre, email);
@@ -22,11 +21,9 @@ module.exports = {
         nombre
       });
     } catch (error) {
-      console.error('Error al registrar cliente:', error);
-      if (error.message && error.message.includes('UNIQUE KEY constraint')) {
-        return res.status(400).json({ success: false, message: 'El correo electrónico ya está registrado. Usa otro o busca el cliente.' });
-      }
-      res.status(500).json({ success: false, message: 'Error interno al registrar cliente' });
+      next(error);
     }
   }
-};
+}
+
+module.exports = new ClientesController();

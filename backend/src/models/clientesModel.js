@@ -1,27 +1,50 @@
-const { getPool, sql } = require('../config/sql');
+const { sequelize, Sequelize } = require('../config/sql');
 
-module.exports = {
-  buscarPorNombre: async (nombre) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('nombre', sql.NVarChar, `%${nombre}%`)
-      .query(`
-        SELECT * FROM cafeteriadb.Clientes 
-        WHERE Nombre LIKE @nombre
-      `);
-    return result.recordset;
+class Cliente extends Sequelize.Model {}
+Cliente.init({
+  IdCliente: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-
-  crear: async (nombre, email) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('nombre', sql.NVarChar, nombre)
-      .input('email',  sql.NVarChar, email || null)
-      .query(`
-        INSERT INTO cafeteriadb.Clientes (Nombre, Email)
-        OUTPUT INSERTED.IdCliente
-        VALUES (@nombre, @email)
-      `);
-    return result.recordset[0];
+  Nombre: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: false
+  },
+  Email: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: true
   }
-};
+}, {
+  sequelize,
+  modelName: 'Cliente',
+  tableName: 'Clientes',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
+
+class ClientesModel {
+  static get sequelizeModel() {
+    return Cliente;
+  }
+
+  static async buscarPorNombre(nombre) {
+    const { Op } = Sequelize;
+    return await Cliente.findAll({
+      where: {
+        Nombre: {
+          [Op.like]: `%${nombre}%`
+        }
+      }
+    });
+  }
+
+  static async crear(nombre, email) {
+    return await Cliente.create({
+      Nombre: nombre,
+      Email: email || null
+    });
+  }
+}
+
+module.exports = ClientesModel;

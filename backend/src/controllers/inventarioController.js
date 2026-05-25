@@ -1,98 +1,91 @@
 const inventarioService = require('../services/inventarioService');
 
-module.exports = {
-  getBebidas: async (req, res) => {
+class InventarioController {
+  async getBebidas(req, res, next) {
     try {
       const bebidas = await inventarioService.obtenerBebidas();
       res.json(bebidas);
     } catch (error) {
-      console.error('Error al obtener bebidas:', error);
-      res.status(500).json({ error: 'Error al obtener bebidas' });
+      next(error);
     }
-  },
+  }
 
-  actualizarStock: async (req, res) => {
+  async actualizarStock(req, res, next) {
     const { id } = req.params;
     const { stock } = req.body;
     try {
       await inventarioService.actualizarStock(id, stock);
       res.json({ success: true });
     } catch (error) {
-      console.error('Error al actualizar stock:', error);
-      res.status(500).json({ error: 'Error al actualizar stock' });
+      next(error);
     }
-  },
+  }
 
-  crearProducto: async (req, res) => {
+  async crearProducto(req, res, next) {
     try {
       const id = await inventarioService.crearProducto(req.body);
       res.status(201).json({ success: true, id });
     } catch (error) {
-      console.error('Error al crear producto:', error);
-      res.status(500).json({ error: 'Error al crear producto: ' + error.message });
+      next(error);
     }
-  },
+  }
 
-  enviarOrdenCompra: async (req, res) => {
+  async enviarOrdenCompra(req, res, next) {
     try {
       const messageId = await inventarioService.enviarOrdenCompra(req.body);
       res.json({ success: true, message: 'Orden de compra enviada por correo con éxito.', messageId });
     } catch (error) {
-      console.error('❌ Error al enviar el correo:', error);
-      res.status(500).json({ success: false, message: 'Fallo al enviar el correo de orden.' });
+      next(error);
     }
-  },
+  }
 
-  getInsumos: async (req, res) => {
+  async getInsumos(req, res, next) {
     try {
       const insumos = await inventarioService.obtenerInsumos();
       res.json(insumos);
     } catch (error) {
-      console.error('Error al obtener insumos:', error);
-      res.status(500).json({ error: 'Error al obtener insumos' });
+      next(error);
     }
-  },
+  }
 
-  crearNuevoInsumo: async (req, res) => {
+  async crearNuevoInsumo(req, res, next) {
     try {
       const id = await inventarioService.crearNuevoInsumo(req.body);
       res.status(201).json({ success: true, id });
     } catch (error) {
-      console.error('Error al crear nuevo insumo:', error);
-      res.status(500).json({ success: false, message: 'Error al crear insumo: ' + error.message });
+      next(error);
     }
-  },
+  }
 
-  crearProductoConReceta: async (req, res) => {
+  async crearProductoConReceta(req, res, next) {
     try {
       const id = await inventarioService.crearProductoConReceta(req.body);
       res.status(201).json({ success: true, id });
     } catch (error) {
-      console.error('Error al crear producto con receta:', error);
-      res.status(500).json({ success: false, message: 'Error al crear producto: ' + error.message });
+      next(error);
     }
-  },
+  }
 
-  getReceta: async (req, res) => {
+  async getReceta(req, res, next) {
     const { id } = req.params;
     try {
       const receta = await inventarioService.obtenerReceta(id);
       res.json(receta);
     } catch (error) {
-      console.error('Error al obtener la receta:', error);
-      res.status(500).json({ error: 'Error al obtener la receta del producto' });
+      next(error);
     }
-  },
+  }
 
-  actualizarReceta: async (req, res) => {
+  async actualizarReceta(req, res, next) {
     const { id } = req.params;
     const { Receta } = req.body;
     try {
       await inventarioService.actualizarReceta(id, Receta);
       res.json({ success: true, message: 'Receta actualizada correctamente' });
     } catch (error) {
-      console.error('Error al actualizar receta:', error);
-      res.status(500).json({ success: false, message: 'Error al actualizar receta: ' + error.message });
+      next(error);
     }
   }
-};
+}
+
+module.exports = new InventarioController();

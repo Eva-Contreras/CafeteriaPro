@@ -1,62 +1,76 @@
-const { getPool, sql } = require('../config/sql.js');
+const { sequelize, Sequelize } = require('../config/sql.js');
 
-module.exports = {
-
-  obtenerUsuarios: async () => {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT IdUsuario, Nombre, Correo, Rol 
-      FROM cafeteriadb.Usuarios
-    `);
-    return result.recordset;
+class Usuario extends Sequelize.Model {}
+Usuario.init({
+  IdUsuario: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-
-  buscarPorCorreo: async (correo) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('correo', sql.NVarChar, correo)
-      .query(`
-        SELECT IdUsuario, Nombre, Correo, Rol, Contrasena 
-        FROM cafeteriadb.Usuarios 
-        WHERE Correo = @correo
-      `);
-    return result.recordset[0] || null;
+  Nombre: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: false
   },
-
-  insertarUsuario: async ({ nombre, correo, contrasena, rol }) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('nombre',    sql.NVarChar, nombre)
-      .input('correo',    sql.NVarChar, correo)
-      .input('contrasena', sql.NVarChar, contrasena)
-      .input('rol',       sql.NVarChar, rol)
-      .query(`
-        INSERT INTO cafeteriadb.Usuarios (Nombre, Correo, Contrasena, Rol)
-        OUTPUT INSERTED.IdUsuario
-        VALUES (@nombre, @correo, @contrasena, @rol)
-      `);
-    return result.recordset[0].IdUsuario;
+  Correo: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
-
-  actualizarUsuario: async (id, { nombre, correo, rol }) => {
-    const pool = await getPool();
-    await pool.request()
-      .input('nombre',  sql.NVarChar, nombre)
-      .input('correo',  sql.NVarChar, correo)
-      .input('rol',     sql.NVarChar, rol)
-      .input('id',      sql.Int,      id)
-      .query(`
-        UPDATE cafeteriadb.Usuarios 
-        SET Nombre = @nombre, Correo = @correo, Rol = @rol
-        WHERE IdUsuario = @id
-      `);
+  Contrasena: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: false
   },
+  Rol: {
+    type: Sequelize.DataTypes.STRING,
+    allowNull: false
+  }
+}, {
+  sequelize,
+  modelName: 'Usuario',
+  tableName: 'Usuarios',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
 
-  eliminarUsuario: async (id) => {
-    const pool = await getPool();
-    await pool.request()
-      .input('id', sql.Int, id)
-      .query('DELETE FROM cafeteriadb.Usuarios WHERE IdUsuario = @id');
+class UsuariosModel {
+  static get sequelizeModel() {
+    return Usuario;
   }
 
-};
+  static async obtenerUsuarios() {
+    return await Usuario.findAll({
+      attributes: ['IdUsuario', 'Nombre', 'Correo', 'Rol']
+    });
+  }
+
+  static async buscarPorCorreo(correo) {
+    return await Usuario.findOne({
+      where: { Correo: correo }
+    });
+  }
+
+  static async insertarUsuario({ nombre, correo, contrasena, rol }) {
+    const user = await Usuario.create({
+      Nombre: nombre,
+      Correo: correo,
+      Contrasena: contrasena,
+      Rol: rol
+    });
+    return user.IdUsuario;
+  }
+
+  static async actualizarUsuario(id, { nombre, correo, rol }) {
+    await Usuario.update(
+      { Nombre: nombre, Correo: correo, Rol: rol },
+      { where: { IdUsuario: id } }
+    );
+  }
+
+  static async eliminarUsuario(id) {
+    await Usuario.destroy({
+      where: { IdUsuario: id }
+    });
+  }
+}
+
+module.exports = UsuariosModel;

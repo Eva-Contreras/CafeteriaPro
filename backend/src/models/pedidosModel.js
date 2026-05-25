@@ -1,289 +1,304 @@
-const { getPool, sql } = require('../config/sql.js');
+const { sequelize, Sequelize } = require('../config/sql.js');
+const ClientesModel = require('./clientesModel');
+const Cliente = ClientesModel.sequelizeModel;
 
-module.exports = {
-
-  obtenerPedidosPendientes: async () => {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT 
-        p.IdPedido,
-        c.Nombre AS NombreCliente,
-        p.Fecha,
-        p.Total,
-        ROUND(p.Total / 1.16, 2) as Subtotal,
-        cafeteriadb.CalcularIVA(ROUND(p.Total / 1.16, 2)) as IVA,
-        u.Nombre AS NombreUsuario,
-        p.Estado
-      FROM cafeteriadb.Pedidos p
-      JOIN cafeteriadb.Clientes c ON p.IdCliente = c.IdCliente
-      JOIN cafeteriadb.Usuarios u ON p.IdUsuario = u.IdUsuario
-      WHERE p.Estado = 'Pendiente'
-      ORDER BY p.Fecha DESC
-    `);
-    return result.recordset;
+// 1. Definición de Modelos Sequelize
+class Pedido extends Sequelize.Model {}
+Pedido.init({
+  IdPedido: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-
-  obtenerPedidosCompletados: async () => {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT
-        p.IdPedido,
-        p.IdCliente,
-        c.Nombre AS NombreCliente,
-        p.Fecha,
-        p.Total,
-        u.IdUsuario,
-        u.Nombre AS NombreUsuario,
-        p.Estado
-      FROM cafeteriadb.Pedidos p
-      JOIN cafeteriadb.Clientes c ON p.IdCliente = c.IdCliente
-      JOIN cafeteriadb.Usuarios u ON p.IdUsuario = u.IdUsuario
-      WHERE p.Estado = 'Completado'
-      ORDER BY p.Fecha DESC
-    `);
-    return result.recordset;
+  IdCliente: Sequelize.DataTypes.INTEGER,
+  Fecha: {
+    type: Sequelize.DataTypes.DATE,
+    defaultValue: Sequelize.NOW
   },
+  Total: Sequelize.DataTypes.DECIMAL(10, 2),
+  IdUsuario: Sequelize.DataTypes.INTEGER,
+  Estado: Sequelize.DataTypes.STRING
+}, {
+  sequelize,
+  modelName: 'Pedido',
+  tableName: 'Pedidos',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
 
-  obtenerDetallePedido: async (id) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('id', sql.Int, id)
-      .query(`
-        SELECT 
-          dp.Cantidad,
-          dp.Subtotal,
-          p.Nombre AS NombreProducto,
-          p.Precio AS PrecioUnitario
-        FROM cafeteriadb.DetallePedidos dp
-        JOIN cafeteriadb.Productos p ON dp.IdProducto = p.IdProducto
-        WHERE dp.IdPedido = @id
-      `);
-    return result.recordset;
+class DetallePedido extends Sequelize.Model {}
+DetallePedido.init({
+  IdPedido: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true
   },
-
-  obtenerClientePedido: async (id) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('id', sql.Int, id)
-      .query(`
-        SELECT c.Nombre, c.Email
-        FROM cafeteriadb.Pedidos p
-        JOIN cafeteriadb.Clientes c ON p.IdCliente = c.IdCliente
-        WHERE p.IdPedido = @id
-      `);
-    return result.recordset[0] || null;
+  IdProducto: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true
   },
+  Cantidad: Sequelize.DataTypes.INTEGER,
+  Subtotal: Sequelize.DataTypes.DECIMAL(10, 2)
+}, {
+  sequelize,
+  modelName: 'DetallePedido',
+  tableName: 'DetallePedidos',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
 
-  completarPedido: async (id) => {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('id', sql.Int, id)
-      .query(`
-        UPDATE cafeteriadb.Pedidos 
-        SET Estado = 'Completado' 
-        WHERE IdPedido = @id
-      `);
-    return result.rowsAffected[0];
+class TipoLeche extends Sequelize.Model {}
+TipoLeche.init({
+  IdLeche: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
+  Nombre: Sequelize.DataTypes.STRING,
+  IdInventario: Sequelize.DataTypes.INTEGER,
+  CantidadBase: Sequelize.DataTypes.DECIMAL(10, 3)
+}, {
+  sequelize,
+  modelName: 'TipoLeche',
+  tableName: 'TiposLeche',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
 
-  obtenerTiposLeche: async () => {
-    const pool = await getPool();
-    const result = await pool.request().query('SELECT IdLeche, Nombre FROM cafeteriadb.TiposLeche ORDER BY Nombre');
-    return result.recordset;
+class ShotCafe extends Sequelize.Model {}
+ShotCafe.init({
+  CantidadShots: {
+    type: Sequelize.DataTypes.INTEGER,
+    primaryKey: true
   },
+  ExtraCafe: Sequelize.DataTypes.DECIMAL(10, 3)
+}, {
+  sequelize,
+  modelName: 'ShotCafe',
+  tableName: 'ShotsCafe',
+  schema: 'cafeteriadb',
+  timestamps: false
+});
 
-  crearPedido: async ({ idCliente, total, idUsuario, productos }) => {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-    await transaction.begin();
+// Importar modelos necesarios para relaciones
+const InventarioModel = require('./inventarioModel');
+const { Producto, Inventario, Receta } = InventarioModel.models;
+const UsuariosModel = require('./usuariosModel');
+const Usuario = UsuariosModel.sequelizeModel;
 
+// Relaciones
+Pedido.belongsTo(Cliente, { foreignKey: 'IdCliente', as: 'ClienteDetalle' });
+Pedido.belongsTo(Usuario, { foreignKey: 'IdUsuario', as: 'UsuarioDetalle' });
+Pedido.hasMany(DetallePedido, { foreignKey: 'IdPedido', as: 'Detalles' });
+DetallePedido.belongsTo(Producto, { foreignKey: 'IdProducto', as: 'ProductoDetalle' });
+
+class PedidosModel {
+  static get models() {
+    return { Pedido, DetallePedido, TipoLeche, ShotCafe };
+  }
+
+  static async obtenerPedidosPendientes() {
+    return await Pedido.findAll({
+      where: { Estado: 'Pendiente' },
+      include: [
+        { model: Cliente, as: 'ClienteDetalle', attributes: ['Nombre'] },
+        { model: Usuario, as: 'UsuarioDetalle', attributes: ['Nombre'] }
+      ],
+      order: [['Fecha', 'DESC']]
+    });
+  }
+
+  static async obtenerPedidosCompletados() {
+    return await Pedido.findAll({
+      where: { Estado: 'Completado' },
+      include: [
+        { model: Cliente, as: 'ClienteDetalle', attributes: ['Nombre'] },
+        { model: Usuario, as: 'UsuarioDetalle', attributes: ['Nombre'] }
+      ],
+      order: [['Fecha', 'DESC']]
+    });
+  }
+
+  static async obtenerDetallePedido(id) {
+    return await DetallePedido.findAll({
+      where: { IdPedido: id },
+      include: {
+        model: Producto,
+        as: 'ProductoDetalle',
+        attributes: ['Nombre', 'Precio']
+      }
+    });
+  }
+
+  static async obtenerClientePedido(id) {
+    const pedido = await Pedido.findByPk(id, {
+      include: {
+        model: Cliente,
+        as: 'ClienteDetalle',
+        attributes: ['Nombre', 'Email']
+      }
+    });
+    return pedido ? pedido.ClienteDetalle : null;
+  }
+
+  static async completarPedido(id) {
+    const affected = await Pedido.update(
+      { Estado: 'Completado' },
+      { where: { IdPedido: id } }
+    );
+    return affected[0];
+  }
+
+  static async obtenerTiposLeche() {
+    return await TipoLeche.findAll({ order: [['Nombre', 'ASC']] });
+  }
+
+  static async crearPedido({ idCliente, total, idUsuario, productos }) {
+    const t = await sequelize.transaction();
     try {
-      const ivaResult = await transaction.request()
-        .input('total', sql.Decimal(10, 2), total)
-        .query('SELECT cafeteriadb.CalcularIVA(@total) as iva');
-
-      const iva = parseFloat(ivaResult.recordset[0].iva);
+      // 1. Calcular IVA usando función SQL Server
+      const [ivaRes] = await sequelize.query(
+        'SELECT cafeteriadb.CalcularIVA(:total) AS iva',
+        { replacements: { total }, type: Sequelize.QueryTypes.SELECT, transaction: t }
+      );
+      const iva = parseFloat(ivaRes.iva);
       const totalConIVA = parseFloat((parseFloat(total) + iva).toFixed(2));
 
-      const pedidoResult = await transaction.request()
-        .input('idCliente', sql.Int, idCliente)
-        .input('totalConIVA', sql.Decimal(10, 2), totalConIVA)
-        .input('idUsuario', sql.Int, idUsuario)
-        .query(`
-          INSERT INTO cafeteriadb.Pedidos (IdCliente, Total, IdUsuario, Estado)
-          OUTPUT INSERTED.IdPedido
-          VALUES (@idCliente, @totalConIVA, @idUsuario, 'Pendiente')
-        `);
+      // 2. Crear Pedido
+      const newPedido = await Pedido.create({
+        IdCliente: idCliente,
+        Total: totalConIVA,
+        IdUsuario: idUsuario,
+        Estado: 'Pendiente'
+      }, { transaction: t });
 
-      const idPedido = pedidoResult.recordset[0].IdPedido;
+      const idPedido = newPedido.IdPedido;
 
-      for (const producto of productos) {
-        await transaction.request()
-          .input('idPedido', sql.Int, idPedido)
-          .input('idProducto', sql.Int, producto.id)
-          .input('cantidad', sql.Int, producto.cantidad)
-          .input('subtotal', sql.Decimal(10, 2), producto.subtotal)
-          .query(`
-            INSERT INTO cafeteriadb.DetallePedidos (IdPedido, IdProducto, Cantidad, Subtotal)
-            VALUES (@idPedido, @idProducto, @cantidad, @subtotal)
-          `);
+      // 3. Crear Detalles y aplicar lógica personalizada
+      for (const prod of productos) {
+        await DetallePedido.create({
+          IdPedido: idPedido,
+          IdProducto: prod.id,
+          Cantidad: prod.cantidad,
+          Subtotal: prod.subtotal
+        }, { transaction: t });
 
-        // Lógica de bebida personalizada
-        if (producto.personalizado) {
-          const { idLeche, shots } = producto.personalizado;
-          const request = new sql.Request(transaction);
+        if (prod.personalizado) {
+          const { idLeche, shots } = prod.personalizado;
 
-          // 1. Receta base
-          const baseRecipeResult = await request
-            .input('idProd', sql.Int, producto.id)
-            .query('SELECT IdInventario, CantidadInsumo FROM cafeteriadb.recetas WHERE IdProducto = @idProd');
+          // Recetas base del producto
+          const baseRecipe = await Receta.findAll({
+            where: { IdProducto: prod.id },
+            transaction: t
+          });
 
-          // 2. Leche seleccionada
-          let newMilk = null;
-          if (idLeche > 0) {
-            const selectedMilkResult = await request
-              .input('idLeche', sql.Int, idLeche)
-              .query('SELECT IdInventario, CantidadBase FROM cafeteriadb.TiposLeche WHERE IdLeche = @idLeche');
-            if (selectedMilkResult.recordset.length > 0) {
-              newMilk = selectedMilkResult.recordset[0];
-            }
-          }
+          // Obtener tipos leches disponibles en BD para reversar si corresponde
+          const allMilks = await TipoLeche.findAll({ transaction: t });
+          const allMilkInventarioIds = allMilks.map(m => m.IdInventario);
 
-          // 3. Todas las leches
-          const allMilksResult = await request.query('SELECT IdInventario FROM cafeteriadb.TiposLeche');
-          const allMilkInventarioIds = allMilksResult.recordset.map(m => m.IdInventario);
-
-          // 4. Extra café
-          let extraCafe = 0;
-          if (shots > 0) {
-            const shotsResult = await request
-              .input('shotsCount', sql.Int, shots)
-              .query('SELECT ExtraCafe FROM cafeteriadb.ShotsCafe WHERE CantidadShots = @shotsCount');
-            if (shotsResult.recordset.length > 0) {
-              extraCafe = parseFloat(shotsResult.recordset[0].ExtraCafe);
-            }
-          }
-
-          const baseRecipe = baseRecipeResult.recordset;
           const originalMilkInsumo = baseRecipe.find(item => allMilkInventarioIds.includes(item.IdInventario));
 
-          // Re-sumar la leche original (porque el trigger ya la descontó)
+          // A. Deshacer el descuento automático del trigger para la leche base
           if (originalMilkInsumo) {
-            await request
-              .input('origMilkId', sql.Int, originalMilkInsumo.IdInventario)
-              .input('origMilkQty', sql.Decimal(10, 3), originalMilkInsumo.CantidadInsumo)
-              .query(`
-                UPDATE cafeteriadb.inventario
-                SET Cantidad = Cantidad - (-@origMilkQty)
-                WHERE IdInventario = @origMilkId
-              `);
+            await Inventario.increment(
+              { Cantidad: parseFloat(originalMilkInsumo.CantidadInsumo) },
+              { where: { IdInventario: originalMilkInsumo.IdInventario }, transaction: t }
+            );
           }
 
-          // Restar la leche personalizada
-          if (newMilk) {
-            const milkStockRes = await request
-              .input('newMilkId', sql.Int, newMilk.IdInventario)
-              .query('SELECT Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE IdInventario = @newMilkId');
-            
-            if (milkStockRes.recordset.length > 0) {
-              const currentStock = parseFloat(milkStockRes.recordset[0].Cantidad);
-              const reqQty = parseFloat(newMilk.CantidadBase);
-              const nombreP = milkStockRes.recordset[0].NombreProducto;
-              if (currentStock < reqQty) {
-                throw new Error(`Stock insuficiente para '${nombreP}'. Disponible: ${currentStock}, Requerido: ${reqQty}`);
+          // B. Descontar leche seleccionada
+          if (idLeche > 0) {
+            const selectedMilk = await TipoLeche.findByPk(idLeche, { transaction: t });
+            if (selectedMilk) {
+              const milkInv = await Inventario.findByPk(selectedMilk.IdInventario, { transaction: t });
+              if (milkInv) {
+                const currentStock = parseFloat(milkInv.Cantidad);
+                const reqQty = parseFloat(selectedMilk.CantidadBase);
+                if (currentStock < reqQty) {
+                  throw new Error(`Stock insuficiente para '${milkInv.NombreProducto}'. Disponible: ${currentStock}, Requerido: ${reqQty}`);
+                }
+                
+                await Inventario.decrement(
+                  { Cantidad: reqQty },
+                  { where: { IdInventario: selectedMilk.IdInventario }, transaction: t }
+                );
               }
             }
-
-            await request
-              .input('newMilkIdDeduct', sql.Int, newMilk.IdInventario)
-              .input('newMilkQtyDeduct', sql.Decimal(10, 3), newMilk.CantidadBase)
-              .query(`
-                UPDATE cafeteriadb.inventario
-                SET Cantidad = Cantidad - @newMilkQtyDeduct
-                WHERE IdInventario = @newMilkIdDeduct
-              `);
           }
 
-          // Restar extra café
-          if (extraCafe > 0) {
-            const coffeeResult = await request.query("SELECT IdInventario, Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE NombreProducto = 'Café molido'");
-            if (coffeeResult.recordset.length > 0) {
-              const coffeeId = coffeeResult.recordset[0].IdInventario;
-              const currentStock = parseFloat(coffeeResult.recordset[0].Cantidad);
-              const nombreP = coffeeResult.recordset[0].NombreProducto;
+          // C. Descontar extra café (shots)
+          if (shots > 0) {
+            const shotConfig = await ShotCafe.findByPk(shots, { transaction: t });
+            if (shotConfig) {
+              const extraCafe = parseFloat(shotConfig.ExtraCafe);
+              const coffeeInv = await Inventario.findOne({
+                where: { NombreProducto: 'Café molido' },
+                transaction: t
+              });
 
-              if (currentStock < extraCafe) {
-                throw new Error(`Stock insuficiente para '${nombreP}'. Disponible: ${currentStock}, Requerido: ${extraCafe}`);
+              if (coffeeInv) {
+                const currentStock = parseFloat(coffeeInv.Cantidad);
+                if (currentStock < extraCafe) {
+                  throw new Error(`Stock insuficiente para 'Café molido'. Disponible: ${currentStock}, Requerido: ${extraCafe}`);
+                }
+
+                await Inventario.decrement(
+                  { Cantidad: extraCafe },
+                  { where: { IdInventario: coffeeInv.IdInventario }, transaction: t }
+                );
               }
-
-              await request
-                .input('coffeeIdDeduct', sql.Int, coffeeId)
-                .input('coffeeQtyDeduct', sql.Decimal(10, 3), extraCafe)
-                .query(`
-                  UPDATE cafeteriadb.inventario
-                  SET Cantidad = Cantidad - @coffeeQtyDeduct
-                  WHERE IdInventario = @coffeeIdDeduct
-                `);
             }
           }
         }
       }
 
-      await transaction.commit();
+      await t.commit();
       return { idPedido, totalConIVA };
 
     } catch (error) {
-      await transaction.rollback();
+      await t.rollback();
       throw error;
     }
-  },
+  }
 
-  crearPedidoPersonalizado: async ({ idProducto, idLeche, shots, idCliente, idUsuario }) => {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-    await transaction.begin();
-
+  static async crearPedidoPersonalizado({ idProducto, idLeche, shots, idCliente, idUsuario }) {
+    const t = await sequelize.transaction();
     try {
-      const request = new sql.Request(transaction);
-
       // 1. Receta base
-      const baseRecipeResult = await request
-        .input('idProd', sql.Int, idProducto)
-        .query('SELECT IdInventario, CantidadInsumo FROM cafeteriadb.recetas WHERE IdProducto = @idProd');
+      const baseRecipe = await Receta.findAll({
+        where: { IdProducto: idProducto },
+        transaction: t
+      });
 
       // 2. Leche seleccionada
       let newMilk = null;
       if (idLeche > 0) {
-        const selectedMilkResult = await request
-          .input('idLeche', sql.Int, idLeche)
-          .query('SELECT IdInventario, CantidadBase FROM cafeteriadb.TiposLeche WHERE IdLeche = @idLeche');
-
-        if (selectedMilkResult.recordset.length === 0) {
+        newMilk = await TipoLeche.findByPk(idLeche, { transaction: t });
+        if (!newMilk) {
           throw new Error('El tipo de leche seleccionado no existe.');
         }
-        newMilk = selectedMilkResult.recordset[0];
       }
 
       // 3. Todas las leches
-      const allMilksResult = await request.query('SELECT IdInventario FROM cafeteriadb.TiposLeche');
-      const allMilkInventarioIds = allMilksResult.recordset.map(m => m.IdInventario);
+      const allMilks = await TipoLeche.findAll({ transaction: t });
+      const allMilkInventarioIds = allMilks.map(m => m.IdInventario);
 
       // 4. Configuración shots
       let extraCafe = 0;
       if (shots > 0) {
-        const shotsResult = await request
-          .input('shotsCount', sql.Int, shots)
-          .query('SELECT ExtraCafe FROM cafeteriadb.ShotsCafe WHERE CantidadShots = @shotsCount');
-
-        if (shotsResult.recordset.length === 0) {
+        const shotConfig = await ShotCafe.findByPk(shots, { transaction: t });
+        if (!shotConfig) {
           throw new Error('La cantidad de shots seleccionada no es válida.');
         }
-        extraCafe = parseFloat(shotsResult.recordset[0].ExtraCafe);
+        extraCafe = parseFloat(shotConfig.ExtraCafe);
       }
 
       // 5. Modificar receta en memoria
-      const baseRecipe = baseRecipeResult.recordset;
-      const modifiedRecipe = baseRecipe.filter(item => !allMilkInventarioIds.includes(item.IdInventario));
+      const modifiedRecipe = baseRecipe
+        .filter(item => !allMilkInventarioIds.includes(item.IdInventario))
+        .map(item => ({
+          IdInventario: item.IdInventario,
+          CantidadInsumo: parseFloat(item.CantidadInsumo)
+        }));
 
       if (newMilk) {
         modifiedRecipe.push({
@@ -293,104 +308,87 @@ module.exports = {
       }
 
       if (extraCafe > 0) {
-        const coffeeResult = await request.query("SELECT IdInventario FROM cafeteriadb.inventario WHERE NombreProducto = 'Café molido'");
-        if (coffeeResult.recordset.length === 0) {
+        const coffeeInv = await Inventario.findOne({
+          where: { NombreProducto: 'Café molido' },
+          transaction: t
+        });
+        if (!coffeeInv) {
           throw new Error("No se encontró el insumo 'Café molido' en el inventario.");
         }
 
-        const coffeeId = coffeeResult.recordset[0].IdInventario;
-        const coffeeIndex = modifiedRecipe.findIndex(item => item.IdInventario === coffeeId);
+        const coffeeIndex = modifiedRecipe.findIndex(item => item.IdInventario === coffeeInv.IdInventario);
         if (coffeeIndex !== -1) {
-          modifiedRecipe[coffeeIndex].CantidadInsumo = parseFloat(modifiedRecipe[coffeeIndex].CantidadInsumo) + extraCafe;
+          modifiedRecipe[coffeeIndex].CantidadInsumo += extraCafe;
         } else {
           modifiedRecipe.push({
-            IdInventario: coffeeId,
+            IdInventario: coffeeInv.IdInventario,
             CantidadInsumo: extraCafe
           });
         }
       }
 
-      // 6. Validar stock
+      // 6. Validar y descontar stock
       for (const item of modifiedRecipe) {
-        const stockResult = await request
-          .input(`invId_${item.IdInventario}`, sql.Int, item.IdInventario)
-          .query(`SELECT Cantidad, NombreProducto FROM cafeteriadb.inventario WHERE IdInventario = @invId_${item.IdInventario}`);
-
-        if (stockResult.recordset.length === 0) {
+        const invItem = await Inventario.findByPk(item.IdInventario, { transaction: t });
+        if (!invItem) {
           throw new Error(`El insumo con ID ${item.IdInventario} no se encuentra en el inventario.`);
         }
 
-        const currentStock = parseFloat(stockResult.recordset[0].Cantidad);
-        const requiredAmount = parseFloat(item.CantidadInsumo);
-        const nombreProd = stockResult.recordset[0].NombreProducto;
+        const currentStock = parseFloat(invItem.Cantidad);
+        const requiredAmount = item.CantidadInsumo;
 
         if (currentStock < requiredAmount) {
-          throw new Error(`Stock insuficiente para '${nombreProd}'. Disponible: ${currentStock}, Requerido: ${requiredAmount}`);
+          throw new Error(`Stock insuficiente para '${invItem.NombreProducto}'. Disponible: ${currentStock}, Requerido: ${requiredAmount}`);
         }
+
+        // Descontar inventario
+        await Inventario.decrement(
+          { Cantidad: requiredAmount },
+          { where: { IdInventario: item.IdInventario }, transaction: t }
+        );
       }
 
-      // 7. Descontar stock
-      for (const item of modifiedRecipe) {
-        await request
-          .input(`deductId_${item.IdInventario}`, sql.Int, item.IdInventario)
-          .input(`deductQty_${item.IdInventario}`, sql.Decimal(10, 3), item.CantidadInsumo)
-          .query(`
-            UPDATE cafeteriadb.inventario
-            SET Cantidad = Cantidad - @deductQty_${item.IdInventario}
-            WHERE IdInventario = @deductId_${item.IdInventario}
-          `);
-      }
-
-      // 8. Crear pedido
-      const productResult = await request
-        .input('pId', sql.Int, idProducto)
-        .query('SELECT Precio, Nombre FROM cafeteriadb.Productos WHERE IdProducto = @pId');
-
-      if (productResult.recordset.length === 0) {
+      // 7. Crear el pedido
+      const prodInfo = await Producto.findByPk(idProducto, { transaction: t });
+      if (!prodInfo) {
         throw new Error('Producto no encontrado en el catálogo de productos.');
       }
 
-      const precioBase = parseFloat(productResult.recordset[0].Precio);
-      const nombreProdCat = productResult.recordset[0].Nombre;
+      const precioBase = parseFloat(prodInfo.Precio);
+      const nombreProdCat = prodInfo.Nombre;
 
-      const ivaResult = await request
-        .input('totalPrice', sql.Decimal(10, 2), precioBase)
-        .query('SELECT cafeteriadb.CalcularIVA(@totalPrice) as iva');
-
-      const iva = parseFloat(ivaResult.recordset[0].iva);
+      const [ivaRes] = await sequelize.query(
+        'SELECT cafeteriadb.CalcularIVA(:precio) AS iva',
+        { replacements: { precio: precioBase }, type: Sequelize.QueryTypes.SELECT, transaction: t }
+      );
+      const iva = parseFloat(ivaRes.iva);
       const totalConIVA = parseFloat((precioBase + iva).toFixed(2));
 
       // Insertar en Pedidos
-      const pedidoResult = await request
-        .input('pedIdCliente', sql.Int, idCliente)
-        .input('pedTotal', sql.Decimal(10, 2), totalConIVA)
-        .input('pedIdUsuario', sql.Int, idUsuario)
-        .query(`
-          INSERT INTO cafeteriadb.Pedidos (IdCliente, Total, IdUsuario, Estado)
-          OUTPUT INSERTED.IdPedido
-          VALUES (@pedIdCliente, @pedTotal, @pedIdUsuario, 'Pendiente')
-        `);
-
-      const idPedido = pedidoResult.recordset[0].IdPedido;
+      const newPedido = await Pedido.create({
+        IdCliente: idCliente,
+        Total: totalConIVA,
+        IdUsuario: idUsuario,
+        Estado: 'Pendiente'
+      }, { transaction: t });
 
       // Insertar en DetallePedidos
-      await request
-        .input('detIdPedido', sql.Int, idPedido)
-        .input('detIdProducto', sql.Int, idProducto)
-        .input('detCantidad', sql.Int, 1)
-        .input('detSubtotal', sql.Decimal(10, 2), precioBase)
-        .query(`
-          INSERT INTO cafeteriadb.DetallePedidos (IdPedido, IdProducto, Cantidad, Subtotal)
-          VALUES (@detIdPedido, @detIdProducto, @detCantidad, @detSubtotal)
-        `);
+      await DetallePedido.create({
+        IdPedido: newPedido.IdPedido,
+        IdProducto: idProducto,
+        Cantidad: 1,
+        Subtotal: precioBase
+      }, { transaction: t });
 
-      await transaction.commit();
-      return { idPedido, producto: nombreProdCat };
+      await t.commit();
+      return { idPedido: newPedido.IdPedido, producto: nombreProdCat };
 
     } catch (innerError) {
-      await transaction.rollback();
+      await t.rollback();
       throw innerError;
     }
   }
 
-};
+}
+
+module.exports = PedidosModel;

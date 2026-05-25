@@ -1,10 +1,13 @@
 const menuModel = require('../models/menuModel');
 
-module.exports = {
-  obtenerMenu: async () => {
+class MenuService {
+  async obtenerMenu() {
     return await menuModel.obtenerMenu();
-  },
-  obtenerCategorias: async () => {
+  }
+
+  async obtenerCategorias() {
     return await menuModel.obtenerCategorias();
   }
-};
+}
+
+module.exports = new MenuService();

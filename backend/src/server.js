@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const { testDbConnection } = require('./config/sql');
+const { sequelize } = require('./config/sql');
 const { connectMongo } = require('./config/nosql');
 
 const app = express();
@@ -26,13 +26,30 @@ app.use('/api/clientes',        require('./routes/clientes'));
 app.use('/api/reportes',        require('./routes/reportes'));
 
 // Manejador para redirigir cualquier otra ruta al index del frontend (Single Page App friendly)
-app.use((req, res) => {
+app.use((req, res, next) => {
+  // Solo redirige si no es una ruta de API (para evitar enmascarar errores de API con el HTML)
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'InicioDeSesion.html'));
 });
+
+// Middleware centralizado de manejo de errores dinámico (debe ir al final de todo)
+const ErrorHandler = require('./middleware/errorHandler');
+app.use(ErrorHandler.handle);
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor Express iniciado en: http://localhost:${PORT}`);
   console.log('¡Tu API está lista para recibir peticiones del frontend!');
-  testDbConnection();
+  
+  // Autenticar conexión de Sequelize
+  sequelize.authenticate()
+    .then(() => {
+      console.log('✅ Conexión de base de datos mediante Sequelize exitosa!');
+    })
+    .catch((err) => {
+      console.error('❌ Error al conectar a la base de datos mediante Sequelize:', err.message);
+    });
+
   connectMongo();
 });

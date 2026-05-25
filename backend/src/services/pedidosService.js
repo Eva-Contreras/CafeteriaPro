@@ -1,43 +1,47 @@
 const pedidosModel = require('../models/pedidosModel');
 const nodemailer = require('nodemailer');
+const { AppError } = require('../middleware/errorHandler');
 
-module.exports = {
-
-  obtenerPedidosPendientes: async () => {
+class PedidosService {
+  async obtenerPedidosPendientes() {
     return await pedidosModel.obtenerPedidosPendientes();
-  },
+  }
 
-  obtenerPedidosCompletados: async () => {
+  async obtenerPedidosCompletados() {
     return await pedidosModel.obtenerPedidosCompletados();
-  },
+  }
 
-  obtenerDetallePedido: async (id) => {
+  async obtenerDetallePedido(id) {
     return await pedidosModel.obtenerDetallePedido(id);
-  },
+  }
 
-  obtenerClientePedido: async (id) => {
+  async obtenerClientePedido(id) {
     return await pedidosModel.obtenerClientePedido(id);
-  },
+  }
 
-  completarPedido: async (id) => {
+  async completarPedido(id) {
     return await pedidosModel.completarPedido(id);
-  },
+  }
 
-  obtenerTiposLeche: async () => {
+  async obtenerTiposLeche() {
     return await pedidosModel.obtenerTiposLeche();
-  },
+  }
 
-  crearPedido: async (data) => {
+  async crearPedido(data) {
     return await pedidosModel.crearPedido(data);
-  },
+  }
 
-  crearPedidoPersonalizado: async (data) => {
+  async crearPedidoPersonalizado(data) {
     return await pedidosModel.crearPedidoPersonalizado(data);
-  },
+  }
 
-  enviarTicket: async ({ orderId, email, orderSummary, details }) => {
+  async enviarTicket({ orderId, email, orderSummary, details }) {
     const emailUser = process.env.EMAIL || process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+
+    if (!emailUser || !emailPass) {
+      throw new AppError('Configuración de correo incompleta en el servidor.', 500);
+    }
 
     const subtotal = parseFloat(orderSummary.Total) - parseFloat(orderSummary.IVA);
 
@@ -122,5 +126,6 @@ module.exports = {
 
     return info.messageId;
   }
+}
 
-};
+module.exports = new PedidosService();

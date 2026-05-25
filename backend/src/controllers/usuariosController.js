@@ -1,17 +1,16 @@
 const usuariosService = require('../services/usuariosService');
 
-module.exports = {
-  getUsuarios: async (req, res) => {
+class UsuariosController {
+  async getUsuarios(req, res, next) {
     try {
       const usuarios = await usuariosService.obtenerUsuarios();
       res.json(usuarios);
     } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      res.status(500).json({ error: 'Error al obtener usuarios' });
+      next(error);
     }
-  },
+  }
 
-  crearUsuario: async (req, res) => {
+  async crearUsuario(req, res, next) {
     const { nombre, correo, contrasena, rol } = req.body;
     try {
       const id = await usuariosService.crearUsuario({ nombre, correo, contrasena, rol });
@@ -21,34 +20,30 @@ module.exports = {
         message: 'Usuario creado exitosamente.'
       });
     } catch (error) {
-      console.error('Error al crear usuario:', error);
-      if (error.message === 'El correo ya está registrado.') {
-        return res.status(400).json({ success: false, message: error.message });
-      }
-      res.status(500).json({ success: false, message: 'Error al crear usuario' });
+      next(error);
     }
-  },
+  }
 
-  actualizarUsuario: async (req, res) => {
+  async actualizarUsuario(req, res, next) {
     const { id } = req.params;
     const { nombre, correo, rol } = req.body;
     try {
       await usuariosService.actualizarUsuario(id, { nombre, correo, rol });
       res.json({ success: true, message: 'Usuario actualizado correctamente.' });
     } catch (error) {
-      console.error('Error al actualizar usuario:', error);
-      res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
+      next(error);
     }
-  },
+  }
 
-  eliminarUsuario: async (req, res) => {
+  async eliminarUsuario(req, res, next) {
     const { id } = req.params;
     try {
       await usuariosService.eliminarUsuario(id);
       res.json({ success: true, message: 'Usuario eliminado correctamente.' });
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
-      res.status(500).json({ success: false, message: 'Error al eliminar usuario' });
+      next(error);
     }
   }
-};
+}
+
+module.exports = new UsuariosController();

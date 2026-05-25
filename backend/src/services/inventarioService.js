@@ -1,23 +1,27 @@
 const inventarioModel = require('../models/inventarioModel');
 const nodemailer = require('nodemailer');
+const { AppError } = require('../middleware/errorHandler');
 
-module.exports = {
-
-  obtenerBebidas: async () => {
+class InventarioService {
+  async obtenerBebidas() {
     return await inventarioModel.obtenerBebidas();
-  },
+  }
 
-  actualizarStock: async (id, stock) => {
+  async actualizarStock(id, stock) {
     return await inventarioModel.actualizarStock(id, stock);
-  },
+  }
 
-  crearProducto: async (data) => {
+  async crearProducto(data) {
     return await inventarioModel.crearProducto(data);
-  },
+  }
 
-  enviarOrdenCompra: async ({ producto, cantidad, motivo, destino, usuarioNombre }) => {
+  async enviarOrdenCompra({ producto, cantidad, motivo, destino, usuarioNombre }) {
     const emailUser = process.env.EMAIL || process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS;
+
+    if (!emailUser || !emailPass) {
+      throw new AppError('Configuración de correo incompleta en el servidor.', 500);
+    }
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -43,26 +47,27 @@ module.exports = {
     });
 
     return info.messageId;
-  },
-
-  obtenerInsumos: async () => {
-    return await inventarioModel.obtenerInsumos();
-  },
-
-  crearNuevoInsumo: async (data) => {
-    return await inventarioModel.crearNuevoInsumo(data);
-  },
-
-  crearProductoConReceta: async (data) => {
-    return await inventarioModel.crearProductoConReceta(data);
-  },
-
-  obtenerReceta: async (idProducto) => {
-    return await inventarioModel.obtenerReceta(idProducto);
-  },
-
-  actualizarReceta: async (idProducto, receta) => {
-    return await inventarioModel.actualizarReceta(idProducto, receta);
   }
 
-};
+  async obtenerInsumos() {
+    return await inventarioModel.obtenerInsumos();
+  }
+
+  async crearNuevoInsumo(data) {
+    return await inventarioModel.crearNuevoInsumo(data);
+  }
+
+  async crearProductoConReceta(data) {
+    return await inventarioModel.crearProductoConReceta(data);
+  }
+
+  async obtenerReceta(idProducto) {
+    return await inventarioModel.obtenerReceta(idProducto);
+  }
+
+  async actualizarReceta(idProducto, receta) {
+    return await inventarioModel.actualizarReceta(idProducto, receta);
+  }
+}
+
+module.exports = new InventarioService();

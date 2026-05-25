@@ -17,6 +17,8 @@
     "mssql": "^12.5.3",
     "multer": "^2.0.2",
     "mysql2": "^3.15.3",
-    "nodemailer": "^7.0.10"
+    "nodemailer": "^7.0.10",
+    "sequelize": "^6.37.8",
+    "tedious": "^19.2.1"
   }
 }

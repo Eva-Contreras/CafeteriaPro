@@ -1,39 +1,35 @@
 const pedidosService = require('../services/pedidosService');
 
-module.exports = {
-
-  getPedidosPendientes: async (req, res) => {
+class PedidosController {
+  async getPedidosPendientes(req, res, next) {
     try {
       const pedidos = await pedidosService.obtenerPedidosPendientes();
       res.json(pedidos);
     } catch (error) {
-      console.error('Error al obtener pedidos pendientes:', error);
-      res.status(500).json({ error: 'Error al obtener lista de pedidos' });
+      next(error);
     }
-  },
+  }
 
-  getPedidosCompletados: async (req, res) => {
+  async getPedidosCompletados(req, res, next) {
     try {
       const pedidos = await pedidosService.obtenerPedidosCompletados();
       res.json(pedidos);
     } catch (error) {
-      console.error('Error al obtener pedidos completados:', error);
-      res.status(500).json({ error: 'Error al obtener pedidos completados' });
+      next(error);
     }
-  },
+  }
 
-  getDetallePedido: async (req, res) => {
+  async getDetallePedido(req, res, next) {
     const { id } = req.params;
     try {
       const detalle = await pedidosService.obtenerDetallePedido(id);
       res.json(detalle);
     } catch (error) {
-      console.error('Error al obtener el detalle del pedido:', error);
-      res.status(500).json({ error: 'Error al obtener detalles del pedido' });
+      next(error);
     }
-  },
+  }
 
-  getClientePedido: async (req, res) => {
+  async getClientePedido(req, res, next) {
     const { id } = req.params;
     try {
       const cliente = await pedidosService.obtenerClientePedido(id);
@@ -45,12 +41,11 @@ module.exports = {
         email: cliente.Email
       });
     } catch (error) {
-      console.error('Error al obtener cliente del pedido:', error);
-      res.status(500).json({ error: 'Error al obtener información del cliente' });
+      next(error);
     }
-  },
+  }
 
-  completarPedido: async (req, res) => {
+  async completarPedido(req, res, next) {
     const { id } = req.params;
     try {
       const affected = await pedidosService.completarPedido(id);
@@ -59,48 +54,39 @@ module.exports = {
       }
       res.json({ success: true, message: 'Estado del pedido actualizado a Completado.' });
     } catch (error) {
-      console.error('Error al completar pedido:', error);
-      res.status(500).json({ success: false, message: 'Error interno al actualizar el estado.' });
+      next(error);
     }
-  },
+  }
 
-  crearPedido: async (req, res) => {
+  async crearPedido(req, res, next) {
     try {
       const result = await pedidosService.crearPedido(req.body);
       res.json({ success: true, message: 'Pedido registrado correctamente', idPedido: result.idPedido });
     } catch (error) {
-      console.error('❌ Error al crear pedido:', error.message);
-      res.status(500).json({ success: false, message: error.message });
+      next(error);
     }
-  },
+  }
 
-  enviarTicket: async (req, res) => {
+  async enviarTicket(req, res, next) {
     try {
       const messageId = await pedidosService.enviarTicket(req.body);
       res.json({ success: true, message: 'Ticket enviado correctamente', messageId });
     } catch (error) {
-      console.error('❌ Error al enviar el ticket:', error);
-      res.status(500).json({ success: false, message: 'Error al enviar el ticket: ' + error.message });
+      next(error);
     }
-  },
+  }
 
-  getTiposLeche: async (req, res) => {
+  async getTiposLeche(req, res, next) {
     try {
       const leches = await pedidosService.obtenerTiposLeche();
       res.json(leches);
     } catch (error) {
-      console.error('❌ Error al obtener tipos de leche:', error);
-      res.status(500).json({ error: 'Error al obtener los tipos de leche de la base de datos' });
+      next(error);
     }
-  },
+  }
 
-  crearPedidoPersonalizado: async (req, res) => {
+  async crearPedidoPersonalizado(req, res, next) {
     const { idProducto, idLeche, shots, idCliente, idUsuario } = req.body;
-
-    if (idProducto === undefined || idLeche === undefined || shots === undefined || !idCliente || !idUsuario) {
-      return res.status(400).json({ success: false, message: 'Datos incompletos: idProducto, idLeche, shots, idCliente e idUsuario son requeridos' });
-    }
-
     try {
       const result = await pedidosService.crearPedidoPersonalizado({ idProducto, idLeche, shots, idCliente, idUsuario });
       res.json({
@@ -110,9 +96,9 @@ module.exports = {
         producto: result.producto
       });
     } catch (error) {
-      console.error('❌ Error al crear pedido personalizado:', error);
-      res.status(500).json({ success: false, message: error.message });
+      next(error);
     }
   }
+}
 
-};
+module.exports = new PedidosController();
