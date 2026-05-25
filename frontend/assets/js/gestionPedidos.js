@@ -353,6 +353,13 @@ document.getElementById('productsContainer').addEventListener('click', async (e)
   const card = target.closest('.card');
   if (!card) return;
 
+  // Si hacen clic en la tarjeta o su contenido directo (excluyendo controles de cantidad y botones ok/edit/delete)
+  if (!target.closest('.cantidad-control') && !target.classList.contains('ok') && !target.classList.contains('edit') && !target.classList.contains('delete')) {
+    const idProducto = parseInt(card.dataset.id, 10);
+    abrirEditarRecetaModal(idProducto);
+    return;
+  }
+
   if (target.classList.contains('ok')) {
     if (target.disabled) return;
 
@@ -739,5 +746,146 @@ if (formPersonalizado) {
 
     // Abrir de forma inmediata el modal de resumen/detalles de pedido
     mostrarResumenPedido();
+  });
+}
+
+// ==========================================
+// FUNCIONALIDAD DE EDICIÓN DE RECETA EN VIVO
+// ==========================================
+
+const recetaModal = document.getElementById('recetaModal');
+const btnCloseReceta = document.getElementById('btnCloseReceta');
+const btnCancelarReceta = document.getElementById('btnCancelarReceta');
+const btnRecetaAgregarIngrediente = document.getElementById('btnRecetaAgregarIngrediente');
+const formReceta = document.getElementById('formReceta');
+
+async function abrirEditarRecetaModal(idProducto) {
+  const productObj = allProducts.find(p => p.IdProducto === idProducto);
+  if (!productObj) return;
+
+  const recetaNombreProducto = document.getElementById('recetaNombreProducto');
+  const recetaIngredientesContainer = document.getElementById('recetaIngredientesContainer');
+
+  recetaNombreProducto.textContent = productObj.Nombre;
+  recetaNombreProducto.dataset.id = idProducto;
+
+  // Cargar insumos globales si aún no están cargados
+  if (listaInsumosGlobal.length === 0) {
+    await cargarInsumosSistema();
+  }
+
+  // Limpiar contenedor de ingredientes
+  recetaIngredientesContainer.innerHTML = '<p style="padding:15px; text-align:center; color:#8d6e63; font-style:italic;">Cargando receta del producto...</p>';
+
+  try {
+    const res = await fetch(`${API_URL}/api/inventario/productos/${idProducto}/receta`);
+    if (!res.ok) throw new Error('Error al cargar la receta');
+    const receta = await res.json();
+
+    recetaIngredientesContainer.innerHTML = '';
+    if (receta.length === 0) {
+      agregarFilaIngredienteReceta(); // Fila vacía inicial si no tiene ingredientes
+    } else {
+      receta.forEach(ingrediente => {
+        agregarFilaIngredienteReceta(ingrediente.IdInventario, ingrediente.CantidadInsumo);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    recetaIngredientesContainer.innerHTML = '<p style="color:#e53935; text-align:center; padding:15px;">❌ Error al cargar la receta.</p>';
+  }
+
+  recetaModal.style.display = 'flex';
+}
+
+function agregarFilaIngredienteReceta(idInsumo = '', cantidad = '') {
+  const div = document.createElement('div');
+  div.className = 'fila-ingrediente-receta';
+  div.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:center;';
+
+  let opciones = '<option value="">-- Seleccionar Insumo --</option>';
+  listaInsumosGlobal.forEach(insumo => {
+    const seleccionado = parseInt(insumo.IdInventario, 10) === parseInt(idInsumo, 10) ? 'selected' : '';
+    opciones += `<option value="${insumo.IdInventario}" ${seleccionado}>${insumo.NombreProducto}</option>`;
+  });
+
+  div.innerHTML = `
+    <select class="sel-insumo-receta" style="flex:2; padding:10px; border:2.5px solid #eae1db; border-radius:8px; outline:none; font-family:inherit; color:#3e2723; background:#fafafa;">${opciones}</select>
+    <input type="number" class="inp-cantidad-receta" placeholder="Cant. (kg/l)" step="0.001" min="0" value="${cantidad}" required
+      style="flex:1; padding:10px; border:2.5px solid #eae1db; border-radius:8px; outline:none; text-align:center; font-family:inherit; box-sizing:border-box; color:#3e2723; background:#fafafa;">
+    <button type="button" class="btn-eliminar-fila-receta"
+      style="background:#e53935; color:white; border:none; border-radius:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.4rem; font-weight:bold; outline:none; transition:all 0.2s;">&times;</button>
+  `;
+
+  div.querySelector('.btn-eliminar-fila-receta').addEventListener('click', () => div.remove());
+
+  document.getElementById('recetaIngredientesContainer').appendChild(div);
+}
+
+// Evento para agregar filas vacías en el modal de receta
+if (btnRecetaAgregarIngrediente) {
+  btnRecetaAgregarIngrediente.addEventListener('click', () => {
+    agregarFilaIngredienteReceta();
+  });
+}
+
+// Cerrar modal de receta
+if (btnCloseReceta) {
+  btnCloseReceta.addEventListener('click', () => {
+    recetaModal.style.display = 'none';
+  });
+}
+
+if (btnCancelarReceta) {
+  btnCancelarReceta.addEventListener('click', () => {
+    recetaModal.style.display = 'none';
+  });
+}
+
+// Cerrar al hacer clic fuera del modal de receta
+window.addEventListener('click', (event) => {
+  if (event.target === recetaModal) {
+    recetaModal.style.display = 'none';
+  }
+});
+
+// Guardar la receta editada
+if (formReceta) {
+  formReceta.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const idProducto = parseInt(document.getElementById('recetaNombreProducto').dataset.id, 10);
+    const recetaIngredientes = [];
+
+    document.querySelectorAll('.fila-ingrediente-receta').forEach(row => {
+      const idInsumo = row.querySelector('.sel-insumo-receta').value;
+      const cantidad = row.querySelector('.inp-cantidad-receta').value;
+      if (idInsumo && cantidad) {
+        recetaIngredientes.push({
+          IdInventario: parseInt(idInsumo, 10),
+          CantidadInsumo: parseFloat(cantidad)
+        });
+      }
+    });
+
+    try {
+      const res = await fetch(`${API_URL}/api/inventario/productos/${idProducto}/receta`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Receta: recetaIngredientes })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        alert('✅ Receta actualizada correctamente en la base de datos.');
+        recetaModal.style.display = 'none';
+      } else {
+        alert('❌ Error al actualizar la receta: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Error de conexión al guardar la receta.');
+    }
   });
 }

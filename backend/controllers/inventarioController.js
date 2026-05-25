@@ -186,6 +186,64 @@ const crearProductoConReceta = async (req, res) => {
   }
 };
 
+const getReceta = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('IdProducto', sql.Int, id)
+      .query(`
+        SELECT r.IdInventario, r.CantidadInsumo, i.NombreProducto 
+        FROM cafeteriadb.recetas r
+        JOIN cafeteriadb.inventario i ON r.IdInventario = i.IdInventario
+        WHERE r.IdProducto = @IdProducto
+        ORDER BY i.NombreProducto
+      `);
+    res.json(result.recordset);
+  } catch (error) {
+    console.error('Error al obtener la receta:', error);
+    res.status(500).json({ error: 'Error al obtener la receta del producto' });
+  }
+};
+
+const actualizarReceta = async (req, res) => {
+  const { id } = req.params;
+  const { Receta } = req.body;
+
+  let transaction;
+  try {
+    const pool = await getPool();
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    const requestDelete = new sql.Request(transaction);
+    await requestDelete
+      .input('IdProducto', sql.Int, id)
+      .query('DELETE FROM cafeteriadb.recetas WHERE IdProducto = @IdProducto');
+
+    if (Receta && Array.isArray(Receta) && Receta.length > 0) {
+      for (const ingrediente of Receta) {
+        const requestInsert = new sql.Request(transaction);
+        await requestInsert
+          .input('IdProducto', sql.Int, id)
+          .input('IdInventario', sql.Int, ingrediente.IdInventario)
+          .input('CantidadInsumo', sql.Decimal(10, 3), ingrediente.CantidadInsumo)
+          .query(`
+            INSERT INTO cafeteriadb.recetas (IdProducto, IdInventario, CantidadInsumo)
+            VALUES (@IdProducto, @IdInventario, @CantidadInsumo)
+          `);
+      }
+    }
+
+    await transaction.commit();
+    res.json({ success: true, message: 'Receta actualizada correctamente' });
+  } catch (error) {
+    if (transaction) await transaction.rollback();
+    console.error('Error al actualizar receta:', error);
+    res.status(500).json({ success: false, message: 'Error al actualizar receta: ' + error.message });
+  }
+};
+
 module.exports = {
   getBebidas,
   actualizarStock,
@@ -193,5 +251,7 @@ module.exports = {
   enviarOrdenCompra,
   getInsumos,
   crearNuevoInsumo,
-  crearProductoConReceta
+  crearProductoConReceta,
+  getReceta,
+  actualizarReceta
 };
