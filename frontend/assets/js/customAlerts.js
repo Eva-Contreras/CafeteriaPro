@@ -248,4 +248,83 @@
       window.addEventListener('keydown', handleKeyDown);
     });
   };
+
+  // Inject spinner animations
+  if (!document.getElementById('coffee-loader-style')) {
+    const style = document.createElement('style');
+    style.id = 'coffee-loader-style';
+    style.innerHTML = `
+      @keyframes coffee-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes coffee-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.showLoader = function(message = 'Cargando...') {
+    const existing = document.getElementById('coffee-custom-loader-container');
+    if (existing) existing.remove();
+
+    const container = document.createElement('div');
+    container.id = 'coffee-custom-loader-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000000;
+      opacity: 0;
+      animation: coffee-fade-in 0.2s ease forwards;
+      pointer-events: all;
+      font-family: 'Poppins', sans-serif;
+    `;
+
+    const spinner = document.createElement('div');
+    spinner.style.cssText = `
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(93, 64, 55, 0.15);
+      border-top-color: #5d4037;
+      border-radius: 50%;
+      animation: coffee-spin 0.8s linear infinite;
+      margin-bottom: 15px;
+    `;
+
+    const label = document.createElement('div');
+    label.style.cssText = `
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    `;
+    label.textContent = message;
+
+    container.appendChild(spinner);
+    container.appendChild(label);
+    document.body.appendChild(container);
+  };
+
+  window.hideLoader = function() {
+    const container = document.getElementById('coffee-custom-loader-container');
+    if (!container) return;
+
+    container.style.transition = 'opacity 0.18s ease';
+    container.style.opacity = '0';
+    setTimeout(() => {
+      container.remove();
+    }, 180);
+  };
 })();
