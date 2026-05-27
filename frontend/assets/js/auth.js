@@ -29,17 +29,17 @@ document.getElementById('loginForm')
         localStorage.setItem('usuarioEmail',  data.usuario.Correo);
         localStorage.setItem('mostrarAlertaStock', 'true');
 
-        alert(`¡Bienvenido, ${data.usuario.Nombre}!`);
+        alert(`¡Bienvenido, ${data.usuario.Nombre}!`, () => {
+          const rol = data.usuario.Rol;
 
-        const rol = data.usuario.Rol;
-
-        if (rol === 'Administrador' || rol === 'Cajero/Mesero') {
-          window.location.href = 'pages/inicio/Inicio.html';
-        } else if (rol === 'Encargado de inventario') {
-          window.location.href = 'pages/Inventario/inventario_menu.html';
-        } else {
-          window.location.href = 'pages/inicio/Inicio.html';
-        }
+          if (rol === 'Administrador' || rol === 'Cajero/Mesero') {
+            window.location.href = 'pages/inicio/Inicio.html';
+          } else if (rol === 'Encargado de inventario') {
+            window.location.href = 'pages/Inventario/inventario_menu.html';
+          } else {
+            window.location.href = 'pages/inicio/Inicio.html';
+          }
+        });
 
       } else {
         alert(data.message || 'Correo o contraseña incorrectos');

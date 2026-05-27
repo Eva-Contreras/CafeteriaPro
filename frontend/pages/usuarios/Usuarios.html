@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../assets/css/usuarios.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="../../assets/js/customAlerts.js"></script>
 </head>
 <body>
 
@@ -125,8 +126,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       const rol = localStorage.getItem('usuarioRol');
       if (rol !== 'Administrador') {
-        alert('Acceso denegado. Solo administradores.');
-        window.location.href = '../inicio/Inicio.html';
+        alert('Acceso denegado. Solo administradores.', () => {
+          window.location.href = '../inicio/Inicio.html';
+        });
         return;
       }
       loadUsers();
@@ -237,7 +239,8 @@
 
     // ==================== ELIMINAR USUARIO ====================
     async function deleteUser(id) {
-      if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+      const accepted = await confirm('¿Estás seguro de eliminar este usuario?');
+      if (!accepted) return;
 
       try {
         const res = await fetch(`${API_URL}/api/usuarios/${id}`, { method: 'DELETE' });

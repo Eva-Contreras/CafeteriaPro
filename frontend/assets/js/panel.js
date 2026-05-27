@@ -146,9 +146,11 @@ async function showOrderDetail(orderId, orderSummary) {
 
     document.getElementById('completeOrderBtn')
       ?.addEventListener('click', () => {
-        if (confirm(`¿Marcar el Pedido #${orderId} como COMPLETADO?`)) {
-          markOrderAsCompleted(orderId, activeRow);
-        }
+        confirm(`¿Marcar el Pedido #${orderId} como COMPLETADO?`).then((accepted) => {
+          if (accepted) {
+            markOrderAsCompleted(orderId, activeRow);
+          }
+        });
       });
 
     document.getElementById('sendTicketBtn')
