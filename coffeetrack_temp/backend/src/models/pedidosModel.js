@@ -23,7 +23,8 @@ Pedido.init({
   modelName: 'Pedido',
   tableName: 'Pedidos',
   schema: 'cafeteriadb',
-  timestamps: false
+  timestamps: false,
+  hasTrigger: true
 });
 
 class DetallePedido extends Sequelize.Model {}
@@ -42,7 +43,8 @@ DetallePedido.init({
   modelName: 'DetallePedido',
   tableName: 'DetallePedidos',
   schema: 'cafeteriadb',
-  timestamps: false
+  timestamps: false,
+  hasTrigger: true
 });
 
 
